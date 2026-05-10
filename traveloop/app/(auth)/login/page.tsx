@@ -1,6 +1,7 @@
 "use client";
 import { motion } from "framer-motion";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Eye, EyeOff, Mail, Lock, ArrowRight, Plane, MapPin, Github } from "lucide-react";
 
@@ -8,9 +9,37 @@ const BG = "https://images.unsplash.com/photo-1506197603052-3cc9c3a201bd?w=1200&
 const f = (d = 0) => ({ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.55, delay: d } } });
 
 export default function LoginPage() {
+  const router = useRouter();
   const [show, setShow] = useState(false);
   const [email, setEmail] = useState("");
   const [pass, setPass] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setError(null);
+    setLoading(true);
+
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password: pass }),
+      });
+      const result = await res.json();
+
+      if (!res.ok) {
+        throw new Error(result?.error || result?.message || "Unable to sign in.");
+      }
+
+      router.push("/dashboard");
+    } catch (err: any) {
+      setError(err?.message || "Unable to sign in.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen flex overflow-hidden relative bg-[#050810]">
@@ -83,7 +112,7 @@ export default function LoginPage() {
             <p className="text-white/50 text-sm font-light">Access your curated itineraries</p>
           </motion.div>
 
-          <motion.form variants={f(0.1)} initial="hidden" animate="visible" onSubmit={e => e.preventDefault()} className="space-y-4">
+          <motion.form variants={f(0.1)} initial="hidden" animate="visible" onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-1.5">
               <label className="text-xs text-white/50 uppercase tracking-widest font-medium ml-1">Email Address</label>
               <div className="relative group">
@@ -101,7 +130,7 @@ export default function LoginPage() {
             <div className="space-y-1.5">
               <div className="flex justify-between items-center ml-1">
                 <label className="text-xs text-white/50 uppercase tracking-widest font-medium">Password</label>
-                <button type="button" className="text-xs text-purple-400 hover:text-purple-300 transition-colors font-medium">Recovery</button>
+                <Link href="/forgot-password" className="text-xs text-purple-400 hover:text-purple-300 transition-colors font-medium">Recovery</Link>
               </div>
               <div className="relative group">
                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30 group-focus-within:text-purple-400 transition-colors" style={{ width: 18, height: 18 }} />
@@ -118,6 +147,8 @@ export default function LoginPage() {
               </div>
             </div>
 
+            {error && <p className="text-sm text-red-400">{error}</p>}
+
             <div className="flex items-center gap-3 pt-1">
               <div className="relative flex items-center justify-center">
                 <input type="checkbox" id="rem" className="peer appearance-none w-4 h-4 border border-white/20 rounded bg-white/5 checked:bg-purple-600 checked:border-purple-600 transition-all cursor-pointer" />
@@ -126,16 +157,13 @@ export default function LoginPage() {
               <label htmlFor="rem" className="text-sm text-white/50 cursor-pointer hover:text-white/80 transition-colors">Keep me signed in</label>
             </div>
 
-            <Link href="/dashboard" className="block pt-1">
-              <motion.button 
-                whileHover={{ scale: 1.01, boxShadow: "0 10px 30px -10px rgba(124,58,237,0.5)" }} 
-                whileTap={{ scale: 0.98 }} 
-                type="submit" 
-                className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-medium hover:from-purple-500 hover:to-indigo-500 transition-all shadow-lg text-sm"
-              >
-                Enter Portal <ArrowRight className="w-4 h-4" />
-              </motion.button>
-            </Link>
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-medium hover:from-purple-500 hover:to-indigo-500 transition-all shadow-lg text-sm disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {loading ? "Signing in…" : "Enter Portal"} <ArrowRight className="w-4 h-4" />
+            </button>
           </motion.form>
 
           <motion.div variants={f(0.2)} initial="hidden" animate="visible" className="relative flex items-center gap-4 py-1">

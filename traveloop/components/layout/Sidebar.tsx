@@ -32,7 +32,7 @@ export const Sidebar: React.FC = () => {
       initial={{ opacity: 0, x: -30 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.6, ease: "easeOut" }}
-      className="hidden lg:flex flex-col w-[320px] h-screen sticky top-0 shrink-0 z-40 relative border-r border-white/5"
+      className="hidden lg:flex flex-col w-[320px] h-screen top-0 shrink-0 z-40 relative border-r border-white/5"
       style={{
         background: "linear-gradient(180deg, rgba(5,8,16,0.95) 0%, rgba(5,8,16,0.98) 100%)",
         backdropFilter: "blur(40px)",

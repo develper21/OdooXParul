@@ -102,11 +102,9 @@ export default function LandingPage() {
               Plan cinematic journeys, manage budgets intelligently, and collaborate with fellow travelers on a platform built for modern explorers.
             </motion.p>
             <motion.div custom={2} variants={fade} initial="hidden" animate="visible" className="flex gap-4 flex-wrap">
-              <Link href="/dashboard">
-                <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="flex items-center gap-2 px-8 py-3.5 rounded-full font-medium text-white bg-gradient-to-r from-purple-600 to-indigo-600 shadow-[0_10px_30px_rgba(124,58,237,0.3)] transition-all">
-                  Start Planning Free <ArrowRight className="w-4 h-4" />
-                </motion.button>
-              </Link>
+              <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="flex items-center gap-2 px-8 py-3.5 rounded-full font-medium text-white bg-gradient-to-r from-purple-600 to-indigo-600 shadow-[0_10px_30px_rgba(124,58,237,0.3)] transition-all cursor-default">
+                Start Planning Free <ArrowRight className="w-4 h-4" />
+              </motion.button>
             </motion.div>
           </div>
 
@@ -131,11 +129,9 @@ export default function LandingPage() {
                     <p className="text-white/60 text-xs uppercase tracking-widest font-medium mb-1.5">{slides[slide].country}</p>
                     <h2 className="text-4xl font-bold text-white mb-2 drop-shadow-md" style={{ fontFamily: "var(--font-playfair)" }}>{slides[slide].city}</h2>
                     <p className="text-white/70 text-sm mb-5 font-light leading-relaxed">{slides[slide].tagline}</p>
-                    <Link href="/trips/create">
-                      <motion.button whileHover={{ scale: 1.02 }} className="w-full py-3 rounded-xl bg-white text-black font-medium text-sm hover:bg-gray-100 transition-colors">
-                        Plan This Journey
-                      </motion.button>
-                    </Link>
+                    <motion.button whileHover={{ scale: 1.02 }} className="w-full py-3 rounded-xl bg-white text-black font-medium text-sm hover:bg-gray-100 transition-colors cursor-default">
+                      Plan This Journey
+                    </motion.button>
                   </div>
                 </div>
               </motion.div>

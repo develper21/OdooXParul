@@ -1,40 +1,131 @@
 "use client";
-import { use } from "react";
-import { useState } from "react";
+import { use, useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { DollarSign, Plus, TrendingUp, TrendingDown, ArrowLeft, Plane, Hotel, UtensilsCrossed, Camera, ShoppingBag, AlertCircle, Sparkles, PieChart, Activity, Wallet, CreditCard, ChevronRight, Zap, Target, Receipt } from "lucide-react";
+import { apiGet, apiPost } from "@/lib/api";
+import { Trip, BudgetItem, BudgetSummary } from "@/lib/types";
 
-const categories = [
-  { icon: Plane, label: "Flights & Transit", budget: 1800, spent: 1650, color: "text-cyan-400", bg: "bg-cyan-500/20", gradient: "from-cyan-400 to-blue-600", glow: "rgba(6,182,212,0.5)" },
-  { icon: Hotel, label: "Accommodation", budget: 1500, spent: 980, color: "text-purple-400", bg: "bg-purple-500/20", gradient: "from-purple-400 to-indigo-600", glow: "rgba(168,85,247,0.5)" },
-  { icon: UtensilsCrossed, label: "Food & Dining", budget: 800, spent: 420, color: "text-orange-400", bg: "bg-orange-500/20", gradient: "from-orange-400 to-rose-500", glow: "rgba(249,115,22,0.5)" },
-  { icon: Camera, label: "Experiences", budget: 600, spent: 280, color: "text-pink-400", bg: "bg-pink-500/20", gradient: "from-pink-400 to-fuchsia-600", glow: "rgba(236,72,153,0.5)" },
-  { icon: ShoppingBag, label: "Luxury & Retail", budget: 400, spent: 120, color: "text-emerald-400", bg: "bg-emerald-500/20", gradient: "from-emerald-400 to-teal-600", glow: "rgba(16,185,129,0.5)" },
-  { icon: Wallet, label: "Misc & Reserves", budget: 100, spent: 0, color: "text-amber-400", bg: "bg-amber-500/20", gradient: "from-amber-400 to-yellow-600", glow: "rgba(245,158,11,0.5)" },
-];
+const CATEGORY_META: Record<string, { icon: any; color: string; bg: string; gradient: string; glow: string }> = {
+  "Flights & Transit": { icon: Plane, color: "text-cyan-400", bg: "bg-cyan-500/20", gradient: "from-cyan-400 to-blue-600", glow: "rgba(6,182,212,0.5)" },
+  "Accommodation": { icon: Hotel, color: "text-purple-400", bg: "bg-purple-500/20", gradient: "from-purple-400 to-indigo-600", glow: "rgba(168,85,247,0.5)" },
+  "Food & Dining": { icon: UtensilsCrossed, color: "text-orange-400", bg: "bg-orange-500/20", gradient: "from-orange-400 to-rose-500", glow: "rgba(249,115,22,0.5)" },
+  "Experiences": { icon: Camera, color: "text-pink-400", bg: "bg-pink-500/20", gradient: "from-pink-400 to-fuchsia-600", glow: "rgba(236,72,153,0.5)" },
+  "Luxury & Retail": { icon: ShoppingBag, color: "text-emerald-400", bg: "bg-emerald-500/20", gradient: "from-emerald-400 to-teal-600", glow: "rgba(16,185,129,0.5)" },
+  "Misc & Reserves": { icon: Wallet, color: "text-amber-400", bg: "bg-amber-500/20", gradient: "from-amber-400 to-yellow-600", glow: "rgba(245,158,11,0.5)" },
+};
 
-const expenses = [
-  { title: "Eurostar Premium Class", category: "Flights & Transit", amount: 285, date: "Jun 14 • 14:30", icon: Plane, color: "text-cyan-400", bg: "bg-cyan-500/20", border: "border-cyan-500/30" },
-  { title: "Hôtel Le Marais — Deposit", category: "Accommodation", amount: 420, date: "Jun 15 • 09:00", icon: Hotel, color: "text-purple-400", bg: "bg-purple-500/20", border: "border-purple-500/30" },
-  { title: "Eiffel Tower VIP Access", category: "Experiences", amount: 128, date: "Jun 15 • 11:15", icon: Camera, color: "text-pink-400", bg: "bg-pink-500/20", border: "border-pink-500/30" },
-  { title: "Café de Flore — Dinner", category: "Food & Dining", amount: 96, date: "Jun 15 • 20:45", icon: UtensilsCrossed, color: "text-orange-400", bg: "bg-orange-500/20", border: "border-orange-500/30" },
-  { title: "Louvre Private Tour", category: "Experiences", amount: 72, date: "Jun 16 • 09:30", icon: Camera, color: "text-pink-400", bg: "bg-pink-500/20", border: "border-pink-500/30" },
-  { title: "Seine River Cruise", category: "Experiences", amount: 80, date: "Jun 16 • 18:00", icon: Camera, color: "text-pink-400", bg: "bg-pink-500/20", border: "border-pink-500/30" },
-];
-
-const totalBudget = 5200;
-const totalSpent = categories.reduce((s, c) => s + c.spent, 0);
-const remaining = totalBudget - totalSpent;
-const percentSpent = Math.round((totalSpent / totalBudget) * 100);
+const DEFAULT_CATEGORIES = Object.keys(CATEGORY_META);
 
 export default function BudgetPage({ params }: { params: Promise<{ tripId: string }> }) {
   const { tripId } = use(params);
   const [showAddForm, setShowAddForm] = useState(false);
   const [expenseForm, setExpenseForm] = useState({ title: "", amount: "", category: "Flights & Transit" });
 
+  const [trip, setTrip] = useState<Trip | null>(null);
+  const [items, setItems] = useState<BudgetItem[]>([]);
+  const [summary, setSummary] = useState<BudgetSummary | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    setLoading(true);
+
+    Promise.all([
+      apiGet<{ success: boolean; data: Trip }>(`/api/trips/${tripId}`),
+      apiGet<{ success: boolean; data: { items: BudgetItem[]; summary: BudgetSummary } }>(`/api/trips/${tripId}/budget`),
+    ])
+      .then(([tripRes, budgetRes]) => {
+        if (!active) return;
+        setTrip(tripRes.data || null);
+        setItems(budgetRes.data?.items || []);
+        setSummary(budgetRes.data?.summary || null);
+        setError(null);
+      })
+      .catch((err) => {
+        if (!active) return;
+        setError(err.message || "Unable to load budget data.");
+      })
+      .finally(() => {
+        if (!active) return;
+        setLoading(false);
+      });
+
+    return () => { active = false; };
+  }, [tripId]);
+
+  const totalBudget = trip?.budget ?? summary?.totalBudget ?? 0;
+  const totalSpent = summary?.totalSpent ?? items.reduce((s, it) => s + (Number(it.amount) || 0), 0);
+  const remaining = summary?.remaining ?? totalBudget - totalSpent;
+  const percentSpent = totalBudget > 0 ? Math.round((totalSpent / totalBudget) * 100) : 0;
+
+  const categoryStats = DEFAULT_CATEGORIES.map((cat) => {
+    const meta = CATEGORY_META[cat];
+    const spent = summary?.byCategory?.[cat] ?? items.filter((it) => it.category === cat).reduce((s, it) => s + (Number(it.amount) || 0), 0);
+    const budget = Math.max(1, Math.round(totalBudget / DEFAULT_CATEGORIES.length));
+    return { label: cat, ...meta, budget, spent };
+  });
+
+  const handleSaveTransaction = async () => {
+    if (!expenseForm.title || !expenseForm.amount) return;
+    setSaving(true);
+    try {
+      const res = await apiPost<{ success: boolean; data: BudgetItem }>(`/api/trips/${tripId}/budget`, {
+        name: expenseForm.title,
+        amount: Number(expenseForm.amount),
+        category: expenseForm.category,
+        date: new Date().toISOString().split("T")[0],
+      });
+      if (res.data) {
+        setItems((prev) => [...prev, res.data]);
+        setSummary((prev) =>
+          prev
+            ? {
+                ...prev,
+                totalSpent: prev.totalSpent + Number(expenseForm.amount),
+                remaining: prev.remaining - Number(expenseForm.amount),
+                byCategory: {
+                  ...prev.byCategory,
+                  [expenseForm.category]: (prev.byCategory[expenseForm.category] || 0) + Number(expenseForm.amount),
+                },
+              }
+            : null
+        );
+        setExpenseForm({ title: "", amount: "", category: "Flights & Transit" });
+        setShowAddForm(false);
+      }
+    } catch (err: any) {
+      setError(err?.message || "Failed to save transaction.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const container = { hidden: { opacity: 0 }, visible: { opacity: 1, transition: { staggerChildren: 0.1 } } };
   const item = { hidden: { opacity: 0, y: 30 }, visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" } } };
+
+  if (loading) {
+    return (
+      <div className="relative min-h-screen">
+        <div className="relative z-10 max-w-[1200px] mx-auto px-6 py-8 flex items-center justify-center min-h-[60vh]">
+          <div className="w-10 h-10 border-2 border-emerald-500/30 border-t-emerald-500 rounded-full animate-spin" />
+        </div>
+      </div>
+    );
+  }
+
+  if (error && !items.length) {
+    return (
+      <div className="relative min-h-screen">
+        <div className="relative z-10 max-w-[1200px] mx-auto px-6 py-8 flex flex-col items-center justify-center min-h-[60vh]">
+          <p className="text-red-300 mb-4">{error}</p>
+          <button onClick={() => window.location.reload()} className="px-5 py-2 rounded-xl bg-white/5 text-white/60 hover:text-white text-sm transition-colors">Retry</button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="relative min-h-screen">
@@ -158,7 +249,7 @@ export default function BudgetPage({ params }: { params: Promise<{ tripId: strin
               </div>
               
               <div className="grid md:grid-cols-2 gap-4">
-                {categories.map((cat, i) => {
+                {categoryStats.map((cat: any, i: number) => {
                   const Icon = cat.icon;
                   const pct = Math.round((cat.spent / cat.budget) * 100);
                   const isOver = pct > 90;
@@ -264,12 +355,12 @@ export default function BudgetPage({ params }: { params: Promise<{ tripId: strin
                       <label className="text-[10px] text-white/50 uppercase tracking-widest font-semibold mb-2 block">Category</label>
                       <select suppressHydrationWarning value={expenseForm.category} onChange={e => setExpenseForm({...expenseForm, category: e.target.value})}
                         className="w-full bg-[#050810] border border-white/10 rounded-xl py-3.5 px-4 text-white focus:border-emerald-500/50 transition-all outline-none font-light appearance-none cursor-pointer">
-                        {categories.map(c => <option key={c.label} value={c.label}>{c.label}</option>)}
+                        {DEFAULT_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
                       </select>
                     </div>
                   </div>
                   <div className="flex items-center gap-4 mt-6 pt-6 border-t border-white/5">
-                    <motion.button whileHover={{ scale: 1.05 }} className="px-8 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-medium tracking-wide transition-colors shadow-lg">Save Transaction</motion.button>
+                    <motion.button whileHover={{ scale: 1.05 }} onClick={handleSaveTransaction} disabled={saving} className="px-8 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-medium tracking-wide transition-colors shadow-lg disabled:opacity-50">{saving ? "Saving..." : "Save Transaction"}</motion.button>
                     <motion.button whileHover={{ scale: 1.05 }} onClick={() => setShowAddForm(false)} className="px-8 py-3 bg-white/5 hover:bg-white/10 text-white/70 hover:text-white rounded-xl font-medium tracking-wide transition-colors">Cancel</motion.button>
                   </div>
                 </div>
@@ -278,18 +369,24 @@ export default function BudgetPage({ params }: { params: Promise<{ tripId: strin
           </AnimatePresence>
 
           <div className="glass rounded-[2rem] border border-white/5 overflow-hidden shadow-xl">
-            {expenses.map((exp, i) => {
-              const Icon = exp.icon;
+            {items.length === 0 && (
+              <div className="p-10 text-center">
+                <p className="text-white/40 text-sm">No transactions yet. Log your first expense!</p>
+              </div>
+            )}
+            {items.map((exp: any, i: number) => {
+              const meta = CATEGORY_META[exp.category] || CATEGORY_META["Misc & Reserves"];
+              const Icon = meta.icon;
               return (
-                <motion.div key={i} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.05 }}
+                <motion.div key={exp.id || i} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.05 }}
                   className="group relative flex items-center justify-between p-6 hover:bg-white/[0.03] border-b border-white/5 last:border-0 transition-colors cursor-pointer">
-                  
+
                   <div className="flex items-center gap-5 relative z-10">
-                    <div className={`w-12 h-12 rounded-xl ${exp.bg} ${exp.border} border flex items-center justify-center shrink-0 transition-transform duration-300 group-hover:scale-110 shadow-inner`}>
-                      <Icon className={`w-5 h-5 ${exp.color}`} />
+                    <div className={`w-12 h-12 rounded-xl ${meta.bg} border border-white/10 flex items-center justify-center shrink-0 transition-transform duration-300 group-hover:scale-110 shadow-inner`}>
+                      <Icon className={`w-5 h-5 ${meta.color}`} />
                     </div>
                     <div>
-                      <h4 className="text-base font-semibold text-white tracking-wide">{exp.title}</h4>
+                      <h4 className="text-base font-semibold text-white tracking-wide">{exp.name}</h4>
                       <div className="flex items-center gap-2 mt-1">
                         <span className="text-xs text-white/50">{exp.category}</span>
                         <span className="w-1 h-1 rounded-full bg-white/20" />
@@ -297,9 +394,9 @@ export default function BudgetPage({ params }: { params: Promise<{ tripId: strin
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center gap-6 relative z-10">
-                    <span className="text-lg font-bold text-white tracking-tight">₹{exp.amount.toFixed(2)}</span>
+                    <span className="text-lg font-bold text-white tracking-tight">₹{Number(exp.amount).toLocaleString()}</span>
                     <button className="opacity-0 group-hover:opacity-100 transition-opacity w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-white/50 hover:text-white hover:bg-white/10">
                       <Receipt className="w-4 h-4" />
                     </button>

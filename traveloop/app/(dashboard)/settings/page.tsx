@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { User, Bell, Globe, Shield, LogOut, Trash2, ChevronRight, Settings, Camera, CheckCircle2, Crown, Sparkles, Smartphone, Laptop, CreditCard, Apple, Fingerprint, Activity, MapPin, Moon, Sun, Palette, Plane, Hotel, UtensilsCrossed, AlertTriangle, Eye, Lock, Zap } from "lucide-react";
+import { apiGet, apiPatch } from "@/lib/api";
+import { User as UserType } from "@/lib/types";
 
 const IMGS = {
   avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80",
@@ -22,7 +24,14 @@ const tabs = [
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState("Profile");
   const [isSaved, setIsSaved] = useState(false);
-  
+  const [user, setUser] = useState<UserType | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  // Form state for editable fields
+  const [profileForm, setProfileForm] = useState({ name: "", email: "", phone: "", dob: "" });
+
   // Toggles state
   const [toggles, setToggles] = useState<Record<string, boolean>>({
     "Trip Alerts": true,
@@ -37,11 +46,62 @@ export default function SettingsPage() {
     "Immersive UI Motion": true,
   });
 
-  const toggle = (key: string) => setToggles(p => ({ ...p, [key]: !p[key] }));
+  useEffect(() => {
+    let active = true;
+    setLoading(true);
 
-  const handleSave = () => {
-    setIsSaved(true);
-    setTimeout(() => setIsSaved(false), 3000);
+    apiGet<{ success: boolean; data: UserType }>("/api/auth/me")
+      .then((res) => {
+        if (!active) return;
+        const u = res.data || null;
+        setUser(u);
+        if (u) {
+          setProfileForm({
+            name: u.name || "",
+            email: u.email || "",
+            phone: "",
+            dob: "",
+          });
+        }
+        setError(null);
+      })
+      .catch((err) => {
+        if (!active) return;
+        setError(err.message || "Unable to load profile.");
+      })
+      .finally(() => {
+        if (!active) return;
+        setLoading(false);
+      });
+
+    return () => { active = false; };
+  }, []);
+
+  const toggle = (key: string) => setToggles((p) => ({ ...p, [key]: !p[key] }));
+
+  const handleSave = async () => {
+    if (!user?.id) {
+      setError("User not loaded.");
+      return;
+    }
+    setSaving(true);
+    setError(null);
+    try {
+      await apiPatch(`/api/users?userId=${user.id}`, {
+        name: profileForm.name,
+        email: profileForm.email,
+        preferences: {
+          notifications: toggles["Trip Alerts"],
+          theme: toggles["Dark Mode"] ? "dark" : "light",
+        },
+      });
+      setIsSaved(true);
+      setTimeout(() => setIsSaved(false), 3000);
+    } catch (err: any) {
+      setError(err?.message || "Failed to save preferences.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const container = { hidden: { opacity: 0 }, visible: { opacity: 1, transition: { staggerChildren: 0.1 } } };
@@ -68,14 +128,13 @@ export default function SettingsPage() {
         <motion.div variants={item} className="relative rounded-[2rem] p-8 overflow-hidden border border-white/10 shadow-[0_20px_60px_rgba(0,0,0,0.5)]">
           <div className="absolute inset-0 bg-gradient-to-br from-indigo-900/40 via-[#020510] to-purple-900/30" />
           <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-5" />
-          
-          <div className="relative z-10 flex flex-col md:flex-row items-center md:items-center justify-between gap-8">
-            
+                    <div className="relative z-10 flex flex-col md:flex-row items-center md:items-center justify-between gap-8">
+
             <div className="flex flex-col md:flex-row items-center gap-6">
               {/* Avatar Upload */}
               <div className="relative group/avatar cursor-pointer shrink-0">
                 <div className="w-28 h-28 rounded-full p-1 bg-gradient-to-br from-cyan-400 to-purple-500 shadow-[0_0_30px_rgba(124,58,237,0.3)]">
-                  <img src={IMGS.avatar} alt="User" className="w-full h-full rounded-full object-cover border-4 border-[#020510]" />
+                  <img src={user?.avatar || IMGS.avatar} alt="User" className="w-full h-full rounded-full object-cover border-4 border-[#020810]" />
                 </div>
                 <div className="absolute inset-0 rounded-full bg-black/50 opacity-0 group-hover/avatar:opacity-100 flex items-center justify-center transition-opacity duration-300 backdrop-blur-sm m-1">
                   <Camera className="w-6 h-6 text-white" />
@@ -84,9 +143,9 @@ export default function SettingsPage() {
 
               {/* User Info */}
               <div className="text-center md:text-left space-y-1">
-                <h1 className="text-3xl font-bold text-white tracking-tight" style={{ fontFamily: "var(--font-playfair)" }}>Alex Johnson</h1>
+                <h1 className="text-3xl font-bold text-white tracking-tight" style={{ fontFamily: "var(--font-playfair)" }}>{user?.name || "User"}</h1>
                 <p className="text-white/60 font-light tracking-wide flex items-center justify-center md:justify-start gap-2">
-                  alex.johnson@example.com
+                  {user?.email || "email@example.com"}
                 </p>
                 <div className="flex items-center justify-center md:justify-start gap-3 mt-3">
                   <span className="px-3 py-1 rounded-full bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/30 text-amber-300 text-[10px] font-bold uppercase tracking-widest flex items-center gap-1">
@@ -145,19 +204,19 @@ export default function SettingsPage() {
                   <div className="grid md:grid-cols-2 gap-6">
                     <div>
                       <label className="text-[10px] text-white/50 uppercase tracking-widest font-semibold mb-2 block">Full Name</label>
-                      <input type="text" defaultValue="Alex Johnson" className="w-full bg-[#050810]/50 border border-white/10 rounded-xl py-3.5 px-4 text-white focus:border-indigo-500/50 transition-all outline-none font-light" />
+                      <input type="text" value={profileForm.name} onChange={(e) => setProfileForm((p) => ({ ...p, name: e.target.value }))} className="w-full bg-[#050810]/50 border border-white/10 rounded-xl py-3.5 px-4 text-white focus:border-indigo-500/50 transition-all outline-none font-light" />
                     </div>
                     <div>
                       <label className="text-[10px] text-white/50 uppercase tracking-widest font-semibold mb-2 block">Email Address</label>
-                      <input type="email" defaultValue="alex.johnson@example.com" className="w-full bg-[#050810]/50 border border-white/10 rounded-xl py-3.5 px-4 text-white focus:border-indigo-500/50 transition-all outline-none font-light" />
+                      <input type="email" value={profileForm.email} onChange={(e) => setProfileForm((p) => ({ ...p, email: e.target.value }))} className="w-full bg-[#050810]/50 border border-white/10 rounded-xl py-3.5 px-4 text-white focus:border-indigo-500/50 transition-all outline-none font-light" />
                     </div>
                     <div>
                       <label className="text-[10px] text-white/50 uppercase tracking-widest font-semibold mb-2 block">Phone Number</label>
-                      <input type="tel" defaultValue="+1 (555) 123-4567" className="w-full bg-[#050810]/50 border border-white/10 rounded-xl py-3.5 px-4 text-white focus:border-indigo-500/50 transition-all outline-none font-light" />
+                      <input type="tel" value={profileForm.phone} onChange={(e) => setProfileForm((p) => ({ ...p, phone: e.target.value }))} placeholder="+1 (555) 123-4567" className="w-full bg-[#050810]/50 border border-white/10 rounded-xl py-3.5 px-4 text-white placeholder-white/30 focus:border-indigo-500/50 transition-all outline-none font-light" />
                     </div>
                     <div>
                       <label className="text-[10px] text-white/50 uppercase tracking-widest font-semibold mb-2 block">Date of Birth</label>
-                      <input type="date" defaultValue="1990-05-15" className="w-full bg-[#050810]/50 border border-white/10 rounded-xl py-3.5 px-4 text-white focus:border-indigo-500/50 transition-all outline-none font-light [color-scheme:dark]" />
+                      <input type="date" value={profileForm.dob} onChange={(e) => setProfileForm((p) => ({ ...p, dob: e.target.value }))} className="w-full bg-[#050810]/50 border border-white/10 rounded-xl py-3.5 px-4 text-white focus:border-indigo-500/50 transition-all outline-none font-light [color-scheme:dark]" />
                     </div>
                   </div>
                 </div>
@@ -467,9 +526,9 @@ export default function SettingsPage() {
           <motion.button whileHover={{ backgroundColor: "rgba(255,255,255,0.05)" }} className="px-6 py-2.5 rounded-xl bg-transparent text-white/60 hover:text-white font-medium tracking-wide transition-all text-sm">
             Discard Changes
           </motion.button>
-          <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={handleSave}
-            className="px-8 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-semibold tracking-wide shadow-[0_0_20px_rgba(79,70,229,0.3)] border border-indigo-400/30 transition-all text-sm flex items-center gap-2">
-            Save Preferences
+          <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={handleSave} disabled={saving}
+            className="px-8 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-semibold tracking-wide shadow-[0_0_20px_rgba(79,70,229,0.3)] border border-indigo-400/30 transition-all text-sm flex items-center gap-2 disabled:opacity-50">
+            {saving ? "Saving..." : "Save Preferences"}
             <AnimatePresence>
               {isSaved && (
                 <motion.span initial={{ opacity: 0, width: 0 }} animate={{ opacity: 1, width: "auto" }} exit={{ opacity: 0, width: 0 }}>

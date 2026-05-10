@@ -1,6 +1,7 @@
 "use client";
 import { motion } from "framer-motion";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Eye, EyeOff, Mail, Lock, User, ArrowRight, Plane, Globe, Github } from "lucide-react";
 
@@ -10,10 +11,40 @@ const f = (d = 0) => ({ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y:
 const destinations = ["Bali", "Paris", "Kyoto", "Alps", "Maldives", "Machu Picchu"];
 
 export default function SignupPage() {
+  const router = useRouter();
   const [show, setShow] = useState(false);
   const [showC, setShowC] = useState(false);
   const [form, setForm] = useState({ name: "", email: "", pass: "", confirm: "" });
-  const u = (k: string) => (e: React.ChangeEvent<HTMLInputElement>) => setForm(f => ({ ...f, [k]: e.target.value }));
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const u = (k: string) => (e: React.ChangeEvent<HTMLInputElement>) => setForm((f) => ({ ...f, [k]: e.target.value }));
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setError(null);
+    if (form.pass !== form.confirm) {
+      setError("Passwords do not match.");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: form.name, email: form.email, password: form.pass }),
+      });
+      const result = await res.json();
+      if (!res.ok) {
+        throw new Error(result?.error || result?.message || "Unable to create account.");
+      }
+      router.push("/dashboard");
+    } catch (err: any) {
+      setError(err?.message || "Unable to create account.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen flex overflow-hidden relative bg-[#050810]">
@@ -37,7 +68,7 @@ export default function SignupPage() {
             <p className="text-white/50 text-sm font-light">Create an account to curate your adventures.</p>
           </motion.div>
 
-          <motion.form variants={f(0.1)} initial="hidden" animate="visible" onSubmit={e => e.preventDefault()} className="space-y-3">
+          <motion.form variants={f(0.1)} initial="hidden" animate="visible" onSubmit={handleSubmit} className="space-y-3">
             <div className="space-y-1.5">
               <label className="text-xs text-white/50 uppercase tracking-widest font-medium ml-1">Full Name</label>
               <div className="relative group">
@@ -47,6 +78,7 @@ export default function SignupPage() {
                   value={form.name} 
                   onChange={u("name")} 
                   placeholder="Alex Johnson" 
+                  suppressHydrationWarning
                   className="w-full bg-white/[0.03] border border-white/10 rounded-xl py-2.5 pl-10 pr-4 text-white placeholder-white/20 focus:bg-white/[0.05] focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/50 transition-all outline-none" 
                 />
               </div>
@@ -61,6 +93,7 @@ export default function SignupPage() {
                   value={form.email} 
                   onChange={u("email")} 
                   placeholder="name@example.com" 
+                  suppressHydrationWarning
                   className="w-full bg-white/[0.03] border border-white/10 rounded-xl py-2.5 pl-10 pr-4 text-white placeholder-white/20 focus:bg-white/[0.05] focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/50 transition-all outline-none" 
                 />
               </div>
@@ -76,6 +109,7 @@ export default function SignupPage() {
                     value={form.pass} 
                     onChange={u("pass")} 
                     placeholder="••••••••" 
+                    suppressHydrationWarning
                     className="w-full bg-white/[0.03] border border-white/10 rounded-xl py-2.5 pl-8 pr-8 text-white placeholder-white/20 focus:bg-white/[0.05] focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/50 transition-all outline-none text-sm" 
                   />
                   <button type="button" onClick={() => setShow(!show)} className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors">
@@ -93,6 +127,7 @@ export default function SignupPage() {
                     value={form.confirm} 
                     onChange={u("confirm")} 
                     placeholder="••••••••" 
+                    suppressHydrationWarning
                     className="w-full bg-white/[0.03] border border-white/10 rounded-xl py-2.5 pl-8 pr-8 text-white placeholder-white/20 focus:bg-white/[0.05] focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/50 transition-all outline-none text-sm" 
                   />
                   <button type="button" onClick={() => setShowC(!showC)} className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors">
@@ -112,16 +147,14 @@ export default function SignupPage() {
               </label>
             </div>
 
-            <Link href="/dashboard" className="block">
-              <motion.button 
-                whileHover={{ scale: 1.01, boxShadow: "0 10px 30px -10px rgba(124,58,237,0.5)" }} 
-                whileTap={{ scale: 0.98 }} 
-                type="submit" 
-                className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-medium hover:from-purple-500 hover:to-indigo-500 transition-all shadow-lg text-sm"
-              >
-                Create Account <ArrowRight className="w-4 h-4" />
-              </motion.button>
-            </Link>
+            {error && <p className="text-sm text-red-400">{error}</p>}
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-medium hover:from-purple-500 hover:to-indigo-500 transition-all shadow-lg text-sm disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {loading ? "Creating account…" : "Create Account"} <ArrowRight className="w-4 h-4" />
+            </button>
           </motion.form>
 
           <motion.div variants={f(0.2)} initial="hidden" animate="visible" className="relative flex items-center gap-4 py-0.5">

@@ -1,7 +1,10 @@
 "use client";
+import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { MapPin, Users, Calendar, TrendingUp, Plus, Compass, ArrowRight, Plane, Globe, Zap, DollarSign, Clock, Map, Star, Shield, LayoutGrid } from "lucide-react";
+import { apiGet } from "@/lib/api";
+import { Trip } from "@/lib/types";
 
 const IMGS = {
   header: "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=1600&q=80",
@@ -11,17 +14,28 @@ const IMGS = {
   cta: "https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=1600&q=80"
 };
 
-const stats = [
-  { icon: Plane, label: "Active Trips", value: "3", sub: "+1 this month", bg: IMGS.paris, tint: "rgba(124,58,237,0.4)" },
-  { icon: Globe, label: "Destinations", value: "12", sub: "Countries visited", bg: IMGS.tokyo, tint: "rgba(6,182,212,0.4)" },
-  { icon: Calendar, label: "Days Planned", value: "48", sub: "Across 3 trips", bg: IMGS.bali, tint: "rgba(219,39,119,0.4)" },
-  { icon: DollarSign, label: "Total Budget", value: "₹12.5K", sub: "8% under budget", bg: IMGS.header, tint: "rgba(249,115,22,0.4)" },
-];
+const formatCurrency = (value: number) => `₹${value.toLocaleString()}`;
 
-const trips = [
-  { id: 1, name: "European Summer", cities: ["Paris", "Amsterdam", "Berlin"], date: "Jun 15, 2026", days: 21, travelers: 4, progress: 65, status: "Planning", img: IMGS.paris },
-  { id: 2, name: "Tokyo Escape", cities: ["Tokyo", "Kyoto", "Osaka"], date: "Jul 5, 2026", days: 14, travelers: 2, progress: 40, status: "Planning", img: IMGS.tokyo },
-];
+const getDestinationCount = (trips: Trip[]) => new Set(trips.flatMap((trip) => trip.destination.split(",").map((city) => city.trim()))).size;
+
+const getDaysPlanned = (trips: Trip[]) => trips.reduce((sum, trip) => {
+  const start = new Date(trip.startDate).getTime();
+  const end = new Date(trip.endDate).getTime();
+  if (isNaN(start) || isNaN(end) || end <= start) return sum;
+  return sum + Math.max(1, Math.round((end - start) / (1000 * 60 * 60 * 24)));
+}, 0);
+
+const getTripProgress = (trip: Trip) => {
+  const start = new Date(trip.startDate).getTime();
+  const end = new Date(trip.endDate).getTime();
+  if (isNaN(start) || isNaN(end) || end <= start) {
+    return trip.status === "completed" ? 100 : trip.status === "ongoing" ? 60 : 25;
+  }
+  const now = Date.now();
+  if (now <= start) return 10;
+  if (now >= end) return 100;
+  return Math.round(((now - start) / (end - start)) * 100);
+};
 
 const quickActions = [
   { icon: Compass, label: "AI Planner", desc: "Generate smart itinerary", color: "from-purple-600 to-indigo-600", href: "/trips/create" },
@@ -36,6 +50,46 @@ const trending = [
 ];
 
 export default function Dashboard() {
+  const [trips, setTrips] = useState<Trip[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    setLoading(true);
+
+    apiGet<{ success: boolean; data: Trip[] }>("/api/trips")
+      .then((res) => {
+        if (!active) return;
+        setTrips(res.data || []);
+        setError(null);
+      })
+      .catch((err) => {
+        if (!active) return;
+        setError(err.message || "Unable to load dashboard data.");
+      })
+      .finally(() => {
+        if (!active) return;
+        setLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const activeTrips = useMemo(() => trips.filter((trip) => trip.status !== "completed").length, [trips]);
+  const destinations = useMemo(() => getDestinationCount(trips), [trips]);
+  const daysPlanned = useMemo(() => getDaysPlanned(trips), [trips]);
+  const totalBudget = useMemo(() => trips.reduce((sum, trip) => sum + (trip.budget || 0), 0), [trips]);
+
+  const stats = [
+    { icon: Plane, label: "Active Trips", value: loading ? "..." : activeTrips.toString(), sub: "+1 this month", bg: IMGS.paris, tint: "rgba(124,58,237,0.4)" },
+    { icon: Globe, label: "Destinations", value: loading ? "..." : destinations.toString(), sub: "Distinct locations", bg: IMGS.tokyo, tint: "rgba(6,182,212,0.4)" },
+    { icon: Calendar, label: "Days Planned", value: loading ? "..." : daysPlanned.toString(), sub: "Across all trips", bg: IMGS.bali, tint: "rgba(219,39,119,0.4)" },
+    { icon: DollarSign, label: "Total Budget", value: loading ? "..." : formatCurrency(totalBudget), sub: "Planned spend", bg: IMGS.header, tint: "rgba(249,115,22,0.4)" },
+  ];
+
   const container = { hidden: { opacity: 0 }, visible: { opacity: 1, transition: { staggerChildren: 0.1 } } };
   const item = { hidden: { opacity: 0, y: 30 }, visible: { opacity: 1, y: 0, transition: { duration: 0.7, ease: "easeOut" } } };
 
@@ -73,7 +127,7 @@ export default function Dashboard() {
               Welcome back, <span className="italic text-purple-300">Explorer</span>
             </h1>
             <p className="text-white/60 font-light max-w-xl text-sm leading-relaxed">
-              Your next extraordinary journey is just around the corner. You have 3 upcoming trips and 48 days of adventures planned.
+              Your next extraordinary journey is just around the corner. You have {loading ? "..." : trips.length} upcoming trips and {loading ? "..." : daysPlanned} days of adventures planned.
             </p>
           </div>
           
@@ -137,7 +191,7 @@ export default function Dashboard() {
                   <div className="flex flex-col sm:flex-row">
                     {/* Trip Image Banner */}
                     <div className="relative w-full sm:w-[240px] h-[160px] sm:h-auto shrink-0 overflow-hidden">
-                      <img src={trip.img} alt={trip.name} className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                      <img src={trip.imageUrl || IMGS.paris} alt={trip.title} className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
                       <div className="absolute inset-0 bg-gradient-to-r from-transparent to-[#050810] hidden sm:block" />
                       <div className="absolute inset-0 bg-gradient-to-t from-[#050810] to-transparent sm:hidden" />
                       <div className="absolute top-4 left-4">
@@ -152,27 +206,27 @@ export default function Dashboard() {
                       <div>
                         <div className="flex items-start justify-between gap-4 mb-1">
                           <h3 className="font-bold text-2xl text-white tracking-tight group-hover:text-purple-300 transition-colors" style={{ fontFamily: "var(--font-playfair)" }}>
-                            {trip.name}
+                            {trip.title}
                           </h3>
                         </div>
                         <p className="text-sm text-white/50 flex items-center gap-2 font-light tracking-wide mb-6">
-                          <MapPin className="w-3.5 h-3.5 text-purple-400" /> {trip.cities.join(" — ")}
+                          <MapPin className="w-3.5 h-3.5 text-purple-400" /> {trip.destination.split(",").slice(0, 3).join(" — ")}
                         </p>
                       </div>
 
                       <div>
                         <div className="flex justify-between items-end mb-2">
                           <div className="flex items-center gap-5 text-xs text-white/40 font-light">
-                            <span className="flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5 text-white/30" />{trip.date}</span>
+                            <span className="flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5 text-white/30" />{new Date(trip.startDate).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}</span>
                             <span className="flex items-center gap-1.5"><Users className="w-3.5 h-3.5 text-white/30" />{trip.travelers} guests</span>
-                            <span className="flex items-center gap-1.5"><Clock className="w-3.5 h-3.5 text-white/30" />{trip.days} days</span>
+                            <span className="flex items-center gap-1.5"><Clock className="w-3.5 h-3.5 text-white/30" />{Math.max(1, Math.round((new Date(trip.endDate).getTime() - new Date(trip.startDate).getTime()) / (1000 * 60 * 60 * 24)))} days</span>
                           </div>
-                          <span className="text-xs font-medium text-purple-300">{trip.progress}% Planned</span>
+                          <span className="text-xs font-medium text-purple-300">{getTripProgress(trip)}% Planned</span>
                         </div>
                         
                         {/* Elegant Progress Bar */}
                         <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
-                          <motion.div className="h-full bg-gradient-to-r from-purple-500 to-indigo-500" initial={{ width: 0 }} animate={{ width: `${trip.progress}%` }} transition={{ delay: 0.5 + i * 0.1, duration: 1 }} />
+                          <motion.div className="h-full bg-gradient-to-r from-purple-500 to-indigo-500" initial={{ width: 0 }} animate={{ width: `${getTripProgress(trip)}%` }} transition={{ delay: 0.5 + i * 0.1, duration: 1 }} />
                         </div>
                       </div>
                     </div>

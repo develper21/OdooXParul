@@ -1,8 +1,11 @@
 "use client";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { ArrowRight, ArrowLeft, MapPin, Calendar, Users, DollarSign, Plane, Sparkles, Plus, X, Map, Landmark, Utensils, Building, Mountain, Compass } from "lucide-react";
+import { apiPost } from "@/lib/api";
+import { Trip } from "@/lib/types";
 
 const popularDestinations = [
   { name: "Paris", img: "https://images.unsplash.com/photo-1499856871958-5b9627545d1a?w=200&q=80" },
@@ -26,18 +29,72 @@ const stepIcons = [MapPin, Calendar, DollarSign];
 const stepLabels = ["Destinations", "Dates & Travelers", "Budget & Style"];
 
 export default function CreateTripPage() {
+  const router = useRouter();
   const [step, setStep] = useState(1);
   const [cities, setCities] = useState<string[]>([]);
   const [cityInput, setCityInput] = useState("");
   const [form, setForm] = useState({ name: "", startDate: "", endDate: "", travelers: "2", budget: "", currency: "USD", style: "" });
-  
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
   const update = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setForm(f => ({ ...f, [k]: e.target.value }));
 
-  const addCity = (city: string) => { if (city && !cities.includes(city)) { setCities(p => [...p, city]); setCityInput(""); } };
+  const [citySuggestions, setCitySuggestions] = useState<any[]>([]);
+  const [showCitySuggestions, setShowCitySuggestions] = useState(false);
+
+  const addCity = (city: string) => { if (city && !cities.includes(city)) { setCities(p => [...p, city]); setCityInput(""); setShowCitySuggestions(false); } };
   const removeCity = (city: string) => setCities(p => p.filter(c => c !== city));
+
+  const searchCities = async (query: string) => {
+    if (query.length < 2) {
+      setCitySuggestions([]);
+      setShowCitySuggestions(false);
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/cities?q=${encodeURIComponent(query)}`);
+      const data = await res.json();
+      if (data.success) {
+        setCitySuggestions(data.data.slice(0, 5));
+        setShowCitySuggestions(true);
+      }
+    } catch (err) {
+      console.error("City search error:", err);
+    }
+  };
 
   const totalSteps = 3;
   const fadeUp = { hidden: { opacity: 0, y: 30 }, visible: { opacity: 1, y: 0 } };
+
+  const handleCreateTrip = async () => {
+    setSubmitting(true);
+    setError(null);
+    try {
+      const payload = {
+        title: form.name,
+        destination: cities.join(", ") || "Unknown",
+        startDate: form.startDate || new Date().toISOString().split("T")[0],
+        endDate: form.endDate || new Date().toISOString().split("T")[0],
+        travelers: Number(form.travelers.replace("+", "")) || 2,
+        budget: Number(form.budget) || 0,
+        currency: form.currency,
+        status: "planning",
+        description: form.style ? `A ${form.style} trip.` : "",
+        imageUrl: "",
+      };
+      const res = await apiPost<{ success: boolean; data: Trip }>("/api/trips", payload);
+      if (res.data?.id) {
+        router.push(`/trips/${res.data.id}`);
+      } else {
+        setError("Trip created but no ID returned.");
+      }
+    } catch (err: any) {
+      setError(err?.message || "Failed to create trip.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
     <div className="max-w-5xl mx-auto px-6 py-10 space-y-10">
@@ -131,14 +188,37 @@ export default function CreateTripPage() {
                   {/* Destinations Input */}
                   <div>
                     <label className="text-xs uppercase tracking-widest text-white/50 font-semibold mb-3 block">Destinations</label>
-                    <div className="flex gap-3">
+                    <div className="flex gap-3 relative">
                       <div className="relative flex-1 group">
                         <div className="absolute inset-0 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl blur opacity-0 group-focus-within:opacity-20 transition-opacity duration-500" />
                         <MapPin className="absolute left-5 top-1/2 -translate-y-1/2 text-purple-400 w-5 h-5 z-10" />
-                        <input suppressHydrationWarning type="text" value={cityInput} onChange={e => setCityInput(e.target.value)}
+                        <input 
+                          suppressHydrationWarning 
+                          type="text" 
+                          value={cityInput} 
+                          onChange={e => { setCityInput(e.target.value); searchCities(e.target.value); }}
                           onKeyDown={e => e.key === "Enter" && addCity(cityInput)}
+                          onFocus={() => cityInput.length >= 2 && searchCities(cityInput)}
                           placeholder="Search for a city, region, or country..." 
-                          className="relative w-full bg-[#050810]/50 border border-white/10 rounded-xl py-4 pl-14 pr-5 text-white placeholder-white/30 focus:border-purple-500/50 transition-all outline-none font-light text-lg" />
+                          className="relative w-full bg-[#050810]/50 border border-white/10 rounded-xl py-4 pl-14 pr-5 text-white placeholder-white/30 focus:border-purple-500/50 transition-all outline-none font-light text-lg" 
+                        />
+                        
+                        {/* City Suggestions Dropdown */}
+                        {showCitySuggestions && citySuggestions.length > 0 && (
+                          <div className="absolute top-full left-0 right-0 mt-2 bg-[#050810] border border-white/10 rounded-xl shadow-2xl z-50 max-h-60 overflow-y-auto">
+                            {citySuggestions.map((city, index) => (
+                              <button
+                                key={city.name}
+                                type="button"
+                                onClick={() => { addCity(city.name); setShowCitySuggestions(false); setCityInput(""); }}
+                                className="w-full px-4 py-3 text-left hover:bg-white/10 transition-colors border-b border-white/5 last:border-0 flex items-center gap-3"
+                              >
+                                <span className="text-white font-medium">{city.name}</span>
+                                <span className="text-white/50 text-sm">{city.country}</span>
+                              </button>
+                            ))}
+                          </div>
+                        )}
                       </div>
                       <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => addCity(cityInput)} 
                         className="bg-white text-black px-6 rounded-xl flex items-center justify-center shadow-lg hover:bg-gray-100 transition-colors">
@@ -319,6 +399,12 @@ export default function CreateTripPage() {
         </div>
       </div>
 
+      {error && (
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-4 bg-red-500/[0.03] rounded-2xl border border-red-500/10">
+          <p className="text-red-300 text-sm">{error}</p>
+        </motion.div>
+      )}
+
       {/* ── NAVIGATION BUTTONS ── */}
       <div className="flex justify-between pt-4">
         {step > 1 ? (
@@ -336,17 +422,15 @@ export default function CreateTripPage() {
         )}
 
         {step < totalSteps ? (
-          <motion.button whileHover={{ scale: 1.05, x: 4, boxShadow: "0 0 30px rgba(255,255,255,0.2)" }} whileTap={{ scale: 0.95 }} onClick={() => setStep(s => s + 1)} 
+          <motion.button whileHover={{ scale: 1.05, x: 4, boxShadow: "0 0 30px rgba(255,255,255,0.2)" }} whileTap={{ scale: 0.95 }} onClick={() => setStep(s => s + 1)}
             className="px-8 py-3.5 rounded-xl bg-white text-black font-semibold tracking-wide transition-all flex items-center gap-2 shadow-xl hover:bg-gray-100">
             Continue Journey <ArrowRight className="w-4 h-4" />
           </motion.button>
         ) : (
-          <Link href="/trips/1">
-            <motion.button whileHover={{ scale: 1.05, boxShadow: "0 0 40px rgba(124,58,237,0.5)" }} whileTap={{ scale: 0.95 }} 
-              className="px-8 py-3.5 rounded-xl text-white font-bold tracking-wide transition-all flex items-center gap-2 shadow-[0_10px_30px_rgba(124,58,237,0.3)] bg-gradient-to-r from-purple-600 to-pink-600 border border-purple-500/30">
-              <Sparkles className="w-4 h-4" /> Generate Itinerary
-            </motion.button>
-          </Link>
+          <motion.button whileHover={{ scale: 1.05, boxShadow: "0 0 40px rgba(124,58,237,0.5)" }} whileTap={{ scale: 0.95 }} onClick={handleCreateTrip} disabled={submitting}
+            className="px-8 py-3.5 rounded-xl text-white font-bold tracking-wide transition-all flex items-center gap-2 shadow-[0_10px_30px_rgba(124,58,237,0.3)] bg-gradient-to-r from-purple-600 to-pink-600 border border-purple-500/30 disabled:opacity-50">
+            <Sparkles className="w-4 h-4" /> {submitting ? "Creating..." : "Generate Itinerary"}
+          </motion.button>
         )}
       </div>
 
