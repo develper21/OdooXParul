@@ -1,8 +1,10 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { Plus, Search, MapPin, Calendar, Users, ArrowRight, Plane, Compass, Sparkles, Shield } from "lucide-react";
+import { apiGet } from "@/lib/api";
+import { Trip } from "@/lib/types";
 
 const IMGS = {
   paris: "https://images.unsplash.com/photo-1499856871958-5b9627545d1a?w=800&q=80",
@@ -15,22 +17,89 @@ const IMGS = {
   cta: "https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=1600&q=80",
 };
 
-const allTrips = [
-  { id: 1, name: "European Summer", cities: ["Paris", "Amsterdam", "Berlin"], startDate: "Jun 15, 2026", endDate: "Jul 5, 2026", days: 21, travelers: 4, budget: "₹5,200", status: "planning", img: IMGS.paris, progress: 65 },
-  { id: 2, name: "Asia Exploration", cities: ["Bangkok", "Bali", "Tokyo"], startDate: "Aug 1, 2026", endDate: "Aug 25, 2026", days: 25, travelers: 2, budget: "₹4,800", status: "ongoing", img: IMGS.tokyo, progress: 80 },
-  { id: 3, name: "Bali Paradise", cities: ["Ubud", "Seminyak"], startDate: "Jul 10, 2026", endDate: "Jul 17, 2026", days: 7, travelers: 6, budget: "₹3,600", status: "planning", img: IMGS.bali, progress: 30 },
-  { id: 4, name: "Morocco Discovery", cities: ["Marrakech", "Fes", "Chefchaouen"], startDate: "Mar 1, 2026", endDate: "Mar 12, 2026", days: 11, travelers: 2, budget: "₹2,200", status: "completed", img: IMGS.morocco, progress: 100 },
-  { id: 5, name: "Iceland Aurora Hunt", cities: ["Reykjavik", "Akureyri"], startDate: "Dec 20, 2026", endDate: "Dec 30, 2026", days: 10, travelers: 3, budget: "₹4,100", status: "planning", img: IMGS.iceland, progress: 10 },
-  { id: 6, name: "New Zealand Road Trip", cities: ["Auckland", "Queenstown"], startDate: "Sep 5, 2026", endDate: "Sep 22, 2026", days: 17, travelers: 2, budget: "₹5,800", status: "ongoing", img: IMGS.nz, progress: 55 },
-];
+const cityImages: Record<string, string> = {
+  paris: IMGS.paris,
+  tokyo: IMGS.tokyo,
+  bali: IMGS.bali,
+  morocco: IMGS.morocco,
+  iceland: IMGS.iceland,
+  nz: IMGS.nz,
+};
+
+function getTripImage(destination: string) {
+  const d = destination.toLowerCase();
+  if (d.includes("paris") || d.includes("france") || d.includes("europe")) return IMGS.paris;
+  if (d.includes("tokyo") || d.includes("japan") || d.includes("asia")) return IMGS.tokyo;
+  if (d.includes("bali") || d.includes("indonesia")) return IMGS.bali;
+  if (d.includes("morocco") || d.includes("marrakech")) return IMGS.morocco;
+  if (d.includes("iceland") || d.includes("aurora")) return IMGS.iceland;
+  if (d.includes("zealand") || d.includes("auckland")) return IMGS.nz;
+  return IMGS.paris;
+}
+
+function formatDate(dateStr: string) {
+  try {
+    return new Date(dateStr).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+  } catch {
+    return dateStr;
+  }
+}
+
+function getTripDays(start: string, end: string) {
+  try {
+    const s = new Date(start).getTime();
+    const e = new Date(end).getTime();
+    if (isNaN(s) || isNaN(e)) return 0;
+    return Math.max(1, Math.round((e - s) / (1000 * 60 * 60 * 24)));
+  } catch {
+    return 0;
+  }
+}
+
+function getTripProgress(trip: Trip) {
+  const start = new Date(trip.startDate).getTime();
+  const end = new Date(trip.endDate).getTime();
+  if (isNaN(start) || isNaN(end) || end <= start) {
+    return trip.status === "completed" ? 100 : trip.status === "ongoing" ? 60 : 25;
+  }
+  const now = Date.now();
+  if (now <= start) return 10;
+  if (now >= end) return 100;
+  return Math.round(((now - start) / (end - start)) * 100);
+}
 
 export default function MyTripsPage() {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
+  const [trips, setTrips] = useState<Trip[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const filtered = allTrips.filter(t =>
+  useEffect(() => {
+    let active = true;
+    setLoading(true);
+
+    apiGet<{ success: boolean; data: Trip[] }>("/api/trips")
+      .then((res) => {
+        if (!active) return;
+        setTrips(res.data || []);
+        setError(null);
+      })
+      .catch((err) => {
+        if (!active) return;
+        setError(err.message || "Unable to load trips.");
+      })
+      .finally(() => {
+        if (!active) return;
+        setLoading(false);
+      });
+
+    return () => { active = false; };
+  }, []);
+
+  const filtered = trips.filter(t =>
     (filter === "all" || t.status === filter) &&
-    (t.name.toLowerCase().includes(search.toLowerCase()) || t.cities.join().toLowerCase().includes(search.toLowerCase()))
+    (t.title.toLowerCase().includes(search.toLowerCase()) || t.destination.toLowerCase().includes(search.toLowerCase()))
   );
 
   const container = { hidden: { opacity: 0 }, visible: { opacity: 1, transition: { staggerChildren: 0.1 } } };
@@ -55,7 +124,7 @@ export default function MyTripsPage() {
               My Journeys
             </h1>
             <p className="text-white/60 font-light text-sm leading-relaxed max-w-md tracking-wide">
-              Your personal archive of {allTrips.length} extraordinary adventures. Revisit past memories or continue designing your upcoming escapes.
+              Your personal archive of {loading ? "..." : trips.length} extraordinary adventures. Revisit past memories or continue designing your upcoming escapes.
             </p>
           </div>
           
@@ -91,7 +160,23 @@ export default function MyTripsPage() {
         </div>
       </motion.div>
 
+      {/* ── LOADING ── */}
+      {loading && (
+        <div className="flex items-center justify-center py-24">
+          <div className="w-10 h-10 border-2 border-purple-500/30 border-t-purple-500 rounded-full animate-spin" />
+        </div>
+      )}
+
+      {/* ── ERROR ── */}
+      {error && !loading && (
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-16 bg-red-500/[0.03] rounded-[2rem] border border-red-500/10">
+          <p className="text-red-300 mb-4">{error}</p>
+          <button onClick={() => window.location.reload()} className="px-5 py-2 rounded-xl bg-white/5 text-white/60 hover:text-white text-sm transition-colors">Retry</button>
+        </motion.div>
+      )}
+
       {/* ── TRIPS GRID ── */}
+      {!loading && !error && (
       <AnimatePresence mode="wait">
         <motion.div key={filter + search} variants={container} initial="hidden" animate="visible" className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
           {filtered.map((trip, i) => (
@@ -101,7 +186,7 @@ export default function MyTripsPage() {
                   
                   {/* Cinematic Image Banner */}
                   <div className="relative h-60 overflow-hidden shrink-0 bg-[#050810]">
-                    <img src={trip.img} alt={trip.name} className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 opacity-90" />
+                    <img src={trip.imageUrl || getTripImage(trip.destination)} alt={trip.title} className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 opacity-90" />
                     <div className="absolute inset-0 bg-gradient-to-t from-[#050810] via-[#050810]/40 to-transparent" />
                     <div className="absolute inset-0 bg-gradient-to-b from-[#050810]/30 to-transparent" />
                     
@@ -113,10 +198,10 @@ export default function MyTripsPage() {
 
                     <div className="absolute bottom-6 left-6 right-6">
                       <h3 className="text-2xl font-bold text-white group-hover:text-purple-300 transition-colors drop-shadow-lg tracking-tight" style={{ fontFamily: "var(--font-playfair)" }}>
-                        {trip.name}
+                        {trip.title}
                       </h3>
                       <p className="text-white/70 text-sm flex items-center gap-2 mt-2 font-light tracking-wide drop-shadow-md">
-                        <MapPin className="w-3.5 h-3.5 text-purple-400" /> {trip.cities.join(" — ")}
+                        <MapPin className="w-3.5 h-3.5 text-purple-400" /> {trip.destination.split(",").slice(0, 3).join(" — ")}
                       </p>
                     </div>
                   </div>
@@ -125,17 +210,17 @@ export default function MyTripsPage() {
                   <div className="p-6 flex-1 flex flex-col justify-between">
                     <div className="space-y-5">
                       <div className="flex items-center justify-between text-xs text-white/50 font-light tracking-wide">
-                        <span className="flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5 text-white/30" />{trip.startDate} - {trip.endDate}</span>
+                        <span className="flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5 text-white/30" />{formatDate(trip.startDate)} — {formatDate(trip.endDate)}</span>
                         <span className="flex items-center gap-1.5"><Users className="w-3.5 h-3.5 text-white/30" />{trip.travelers} guests</span>
                       </div>
                       
                       <div>
                         <div className="flex justify-between items-end mb-2">
                           <span className="text-xs text-white/40 tracking-widest uppercase font-medium">Progress</span>
-                          <span className="text-xs font-semibold text-purple-400">{trip.progress}%</span>
+                          <span className="text-xs font-semibold text-purple-400">{getTripProgress(trip)}%</span>
                         </div>
                         <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
-                          <motion.div className="h-full bg-gradient-to-r from-purple-500 to-indigo-500 shadow-[0_0_10px_rgba(124,58,237,0.5)]" initial={{ width: 0 }} animate={{ width: `${trip.progress}%` }} transition={{ duration: 1, delay: 0.3 }} />
+                          <motion.div className="h-full bg-gradient-to-r from-purple-500 to-indigo-500 shadow-[0_0_10px_rgba(124,58,237,0.5)]" initial={{ width: 0 }} animate={{ width: `${getTripProgress(trip)}%` }} transition={{ duration: 1, delay: 0.3 }} />
                         </div>
                       </div>
                     </div>
@@ -143,7 +228,7 @@ export default function MyTripsPage() {
                     <div className="mt-6 pt-5 flex items-center justify-between" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
                       <div className="flex flex-col">
                         <span className="text-[10px] uppercase tracking-widest text-white/30 mb-1 font-semibold">Est. Budget</span>
-                        <span className="text-lg font-bold text-white tracking-wide">{trip.budget}</span>
+                        <span className="text-lg font-bold text-white tracking-wide">₹{trip.budget.toLocaleString()}</span>
                       </div>
                       <motion.div whileHover={{ scale: 1.1, backgroundColor: "rgba(255,255,255,0.1)" }} className="w-10 h-10 rounded-full flex items-center justify-center bg-white/[0.03] border border-white/10 transition-colors">
                         <ArrowRight className="w-4 h-4 text-purple-300" />
@@ -156,8 +241,9 @@ export default function MyTripsPage() {
           ))}
         </motion.div>
       </AnimatePresence>
+      )}
 
-      {filtered.length === 0 && (
+      {!loading && !error && filtered.length === 0 && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-24 bg-white/[0.01] rounded-[2rem] border border-white/5">
           <div className="w-20 h-20 mx-auto rounded-full bg-white/[0.03] flex items-center justify-center mb-6 border border-white/10">
             <Plane className="w-8 h-8 text-white/30" />
