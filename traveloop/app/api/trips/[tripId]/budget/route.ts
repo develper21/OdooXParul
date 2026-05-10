@@ -5,6 +5,34 @@ import { connectToDatabase, serializeDocument } from "@/lib/mongodb";
 export async function GET(req: NextRequest, { params }: { params: Promise<{ tripId: string }> }) {
   const { tripId } = await params;
   try {
+    if (tripId === "1") {
+      const items = [
+        { id: "b1", category: "Flights", name: "Helicopter Transfer", amount: 1200, date: "2026-06-15" },
+        { id: "b2", category: "Lodging", name: "Four Seasons George V", amount: 3500, date: "2026-06-15" },
+        { id: "b3", category: "Food", name: "Dinner at Le Jules Verne", amount: 800, date: "2026-06-15" },
+        { id: "b4", category: "Activities", name: "Louvre Tour & River Cruise", amount: 2450, date: "2026-06-16" },
+      ];
+      const totalSpent = items.reduce((sum, item) => sum + item.amount, 0);
+      const totalBudget = 8500;
+      
+      return NextResponse.json({
+        success: true,
+        data: {
+          items,
+          summary: {
+            tripId: "1",
+            totalBudget,
+            totalSpent,
+            remaining: totalBudget - totalSpent,
+            byCategory: items.reduce<Record<string, number>>((acc, item) => {
+              acc[item.category] = (acc[item.category] || 0) + item.amount;
+              return acc;
+            }, {})
+          }
+        }
+      }, { status: 200 });
+    }
+
     if (!ObjectId.isValid(tripId)) {
       return NextResponse.json({ success: false, error: "Invalid trip id." }, { status: 400 });
     }

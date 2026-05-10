@@ -78,6 +78,7 @@ export default function SignupPage() {
                   value={form.name} 
                   onChange={u("name")} 
                   placeholder="Alex Johnson" 
+                  suppressHydrationWarning
                   className="w-full bg-white/[0.03] border border-white/10 rounded-xl py-2.5 pl-10 pr-4 text-white placeholder-white/20 focus:bg-white/[0.05] focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/50 transition-all outline-none" 
                 />
               </div>
@@ -92,6 +93,7 @@ export default function SignupPage() {
                   value={form.email} 
                   onChange={u("email")} 
                   placeholder="name@example.com" 
+                  suppressHydrationWarning
                   className="w-full bg-white/[0.03] border border-white/10 rounded-xl py-2.5 pl-10 pr-4 text-white placeholder-white/20 focus:bg-white/[0.05] focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/50 transition-all outline-none" 
                 />
               </div>
@@ -107,6 +109,7 @@ export default function SignupPage() {
                     value={form.pass} 
                     onChange={u("pass")} 
                     placeholder="••••••••" 
+                    suppressHydrationWarning
                     className="w-full bg-white/[0.03] border border-white/10 rounded-xl py-2.5 pl-8 pr-8 text-white placeholder-white/20 focus:bg-white/[0.05] focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/50 transition-all outline-none text-sm" 
                   />
                   <button type="button" onClick={() => setShow(!show)} className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors">
@@ -124,6 +127,7 @@ export default function SignupPage() {
                     value={form.confirm} 
                     onChange={u("confirm")} 
                     placeholder="••••••••" 
+                    suppressHydrationWarning
                     className="w-full bg-white/[0.03] border border-white/10 rounded-xl py-2.5 pl-8 pr-8 text-white placeholder-white/20 focus:bg-white/[0.05] focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/50 transition-all outline-none text-sm" 
                   />
                   <button type="button" onClick={() => setShowC(!showC)} className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors">

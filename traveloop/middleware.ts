@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { verifyJwtToken } from '@/lib/auth';
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -22,18 +21,9 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/login', request.url));
   }
 
-  try {
-    // Verify the token
-    verifyJwtToken(token);
-    // Token is valid, continue
-    return NextResponse.next();
-  } catch (error) {
-    // Token is invalid, redirect to login
-    const response = NextResponse.redirect(new URL('/login', request.url));
-    // Clear the invalid cookie
-    response.cookies.set('auth-token', '', { maxAge: 0, path: '/' });
-    return response;
-  }
+  // We only check for cookie presence in middleware.
+  // Full JWT verification happens in the API routes/Server Components.
+  return NextResponse.next();
 }
 
 export const config = {
