@@ -34,6 +34,184 @@ export async function sendEmail(options: EmailOptions) {
   }
 }
 
+export function generateInvitationEmail({
+  tripTitle,
+  tripDestination,
+  invitedBy,
+  inviteUrl,
+  expiresAt,
+}: {
+  tripTitle: string;
+  tripDestination: string;
+  invitedBy: string;
+  inviteUrl: string;
+  expiresAt: string;
+}) {
+  return {
+    subject: `You're invited to join "${tripTitle}" trip!`,
+    html: `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Trip Invitation</title>
+        <style>
+          body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+          }
+          .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+          }
+          .header {
+            background: rgba(255,255,255,0.1);
+            padding: 30px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+          }
+          .logo {
+            font-size: 32px;
+            font-weight: bold;
+            color: white;
+            margin: 0;
+            letter-spacing: 2px;
+          }
+          .content {
+            padding: 40px 30px;
+            background: white;
+          }
+          .title {
+            font-size: 24px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 20px;
+            text-align: center;
+          }
+          .message {
+            font-size: 16px;
+            line-height: 1.6;
+            color: #666;
+            margin-bottom: 30px;
+            text-align: center;
+          }
+          .trip-details {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 15px;
+            padding: 30px;
+            margin: 30px 0;
+            text-align: center;
+            color: white;
+          }
+          .trip-title {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 10px;
+          }
+          .trip-destination {
+            font-size: 18px;
+            opacity: 0.9;
+            margin-bottom: 20px;
+          }
+          .invited-by {
+            font-size: 14px;
+            opacity: 0.8;
+            font-style: italic;
+          }
+          .cta-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            padding: 15px 40px;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 16px;
+            margin: 20px 0;
+            transition: transform 0.3s ease;
+          }
+          .cta-button:hover {
+            transform: translateY(-2px);
+          }
+          .footer {
+            background: #f8f9fa;
+            padding: 20px 30px;
+            text-align: center;
+            border-top: 1px solid #e9ecef;
+          }
+          .footer-text {
+            font-size: 12px;
+            color: #999;
+            margin: 0;
+          }
+          .expiry-note {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+          }
+          .expiry-note p {
+            margin: 0;
+            color: #856404;
+            font-size: 14px;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1 class="logo">✈️ Traveloop</h1>
+          </div>
+          <div class="content">
+            <h2 class="title">You're Invited! 🎉</h2>
+            <p class="message">
+              You've been invited to join an amazing trip on Traveloop. 
+              Accept the invitation to start planning your adventure together!
+            </p>
+            
+            <div class="trip-details">
+              <div class="trip-title">${tripTitle}</div>
+              <div class="trip-destination">📍 ${tripDestination}</div>
+              <div class="invited-by">Invited by: ${invitedBy}</div>
+            </div>
+            
+            <div style="text-align: center;">
+              <a href="${inviteUrl}" class="cta-button">Accept Invitation</a>
+            </div>
+            
+            <div class="expiry-note">
+              <p>
+                <strong>Important:</strong> This invitation will expire on ${expiresAt}. 
+                If you don't have a Traveloop account yet, you'll be able to create one when you click the link.
+              </p>
+            </div>
+            
+            <p class="message">
+              If you have any questions about this trip, feel free to reach out to the person who invited you.
+            </p>
+          </div>
+          <div class="footer">
+            <p class="footer-text">
+              © 2024 Traveloop. All rights reserved.<br>
+              This is an automated message, please do not reply to this email.
+            </p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `,
+  };
+}
+
 export function generateOTPEmail(otp: string, appName: string = 'Traveloop') {
   return {
     subject: `Reset Your ${appName} Password`,

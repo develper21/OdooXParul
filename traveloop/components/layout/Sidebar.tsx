@@ -82,7 +82,7 @@ export const Sidebar: React.FC = () => {
                 <Link key={item.label} href={item.href} className="block relative group">
                   {/* Active Beam Indicator */}
                   {active && (
-                    <motion.div layoutId="activeNavBeam" className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-gradient-to-b from-cyan-400 to-purple-500 rounded-r-full shadow-[0_0_15px_rgba(124,58,237,0.5)]" />
+                    <motion.div layoutId="activeNavBeam" className="absolute left-0 top-1 w-1 h-8 bg-gradient-to-b from-cyan-400 to-purple-500 rounded-r-full shadow-[0_0_15px_rgba(124,58,237,0.5)]" />
                   )}
                   <motion.div
                     whileHover={{ x: active ? 0 : 4, backgroundColor: active ? "" : "rgba(255,255,255,0.03)" }}

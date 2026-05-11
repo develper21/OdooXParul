@@ -1,20 +1,32 @@
 "use client";
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useState, useEffect, Suspense } from "react";
 import { Eye, EyeOff, Mail, Lock, ArrowRight, Plane, MapPin, Github } from "lucide-react";
 
 const BG = "https://images.unsplash.com/photo-1506197603052-3cc9c3a201bd?w=1200&q=80&auto=format";
 const f = (d = 0) => ({ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.55, delay: d } } });
 
-export default function LoginPage() {
+function LoginPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [show, setShow] = useState(false);
   const [email, setEmail] = useState("");
   const [pass, setPass] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  // Check for invitation parameters
+  useEffect(() => {
+    const token = searchParams.get("token");
+    const action = searchParams.get("action");
+    
+    if (token && action === "accept") {
+      // Store invitation info for after login
+      localStorage.setItem("pendingInvitation", JSON.stringify({ token, action }));
+    }
+  }, [searchParams]);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -33,7 +45,33 @@ export default function LoginPage() {
         throw new Error(result?.error || result?.message || "Unable to sign in.");
       }
 
-      router.push("/dashboard");
+      // Check for pending invitation after successful login
+      const pendingInvitation = localStorage.getItem("pendingInvitation");
+      if (pendingInvitation) {
+        const { token, action } = JSON.parse(pendingInvitation);
+        localStorage.removeItem("pendingInvitation");
+        
+        if (action === "accept") {
+          // Accept the invitation and redirect to trip
+          try {
+            await fetch(`/api/invitations/${token}`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ 
+                action: "accept",
+                userId: "current-user-id" // In real app, get from auth response
+              }),
+            });
+            
+            router.push(`/trips/${token.split('-')[0]}`); // Extract tripId from token or use API
+          } catch (err) {
+            console.error("Failed to accept invitation:", err);
+            router.push("/dashboard");
+          }
+        }
+      } else {
+        router.push("/dashboard");
+      }
     } catch (err: any) {
       setError(err?.message || "Unable to sign in.");
     } finally {
@@ -195,5 +233,13 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <LoginPageContent />
+    </Suspense>
   );
 }

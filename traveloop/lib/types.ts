@@ -209,3 +209,49 @@ export interface ChartDataPoint {
   value: number;
   color?: string;
 }
+
+// Trip Member Types
+export interface TripMember {
+  id: string;
+  tripId: string;
+  userId: string;
+  role: "owner" | "organizer" | "member";
+  status: "pending" | "accepted" | "declined";
+  invitedBy: string;
+  invitedAt: Date;
+  joinedAt?: Date;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// Trip Member with User Information (from API response)
+export interface TripMemberWithUser extends TripMember {
+  user?: {
+    _id: string;
+    name?: string;
+    email: string;
+    avatar?: string;
+  } | null;
+}
+
+// Invitation Types
+export interface Invitation {
+  id: string;
+  tripId: string;
+  tripTitle: string;
+  tripDestination: string;
+  invitedEmail: string;
+  invitedUserId?: string;
+  invitedBy: string;
+  token: string;
+  status: "pending" | "accepted" | "declined" | "expired";
+  expiresAt: Date;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// Extended Trip Types with Members
+export interface TripWithMembers extends Trip {
+  members: TripMember[];
+  memberCount: number;
+}
