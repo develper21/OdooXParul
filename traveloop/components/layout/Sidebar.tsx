@@ -6,8 +6,8 @@ import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
 import {
   LayoutGrid, MapPin, PlusCircle, Map,
-  WalletCards, Settings2, LogOut, Compass, Plane,
-  Sparkles, Crown, LifeBuoy
+  WalletCards, Settings2, LogOut, Plane,
+  Sparkles
 } from "lucide-react";
 
 const menuItems = [
@@ -25,7 +25,13 @@ const bottomItems = [
 
 export const Sidebar: React.FC = () => {
   const pathname = usePathname();
-  const isActive = (href: string) => pathname === href || (href !== "/dashboard" && pathname.startsWith(href));
+  const isActive = (href: string) => {
+  if (href === "/dashboard") return pathname === href;
+  if (pathname === href) return true;
+  if (href === "/trips") return pathname === "/trips";
+
+  return pathname.startsWith(href);
+};
 
   return (
     <motion.aside
