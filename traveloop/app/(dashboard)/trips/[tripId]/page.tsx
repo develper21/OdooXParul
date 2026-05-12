@@ -2,10 +2,10 @@
 import { use, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { Users, DollarSign, MapPin, ArrowRight, Clock, TrendingUp, Plane, Share2, Edit2, Heart, MessageSquare, UserPlus, Crown, Shield } from "lucide-react";
+import { Users, DollarSign, MapPin, ArrowRight, Clock, TrendingUp, Plane, Share2, Edit2, Heart, MessageSquare, UserPlus, Crown, Shield, Map } from "lucide-react";
 import { apiGet } from "@/lib/api";
 import { Trip, Activity, BudgetSummary, TripMemberWithUser } from "@/lib/types";
-import InviteMemberModal from "@/components/InviteMemberModal";
+import TripCrewManager from "@/components/TripCrewManager";
 
 export default function TripDetailPage({ params }: { params: Promise<{ tripId: string }> }) {
   const { tripId } = use(params);
@@ -107,7 +107,7 @@ export default function TripDetailPage({ params }: { params: Promise<{ tripId: s
             {isInvalidId ? "Invalid Trip ID" : "Trip Not Found"}
           </h3>
           <p className="text-white/40 mb-8 font-light tracking-wide max-w-md">
-            {isInvalidId 
+            {isInvalidId
               ? "The trip ID you entered is not valid. Please access trips from your dashboard."
               : "This trip doesn't exist or has been deleted. Please check your available trips."}
           </p>
@@ -234,17 +234,28 @@ export default function TripDetailPage({ params }: { params: Promise<{ tripId: s
             </div>
             <p className="text-xs text-white/30">{budgetProgress}% of budget used</p>
           </div>
-          <div className="space-y-4">
-            <Link href={`/trips/${tripId}/packing`}>
-              <motion.button whileHover={{ scale: 1.03 }} className="w-full btn-secondary justify-center py-3 text-sm">
-                Packing List <ArrowRight className="w-4 h-4" />
-              </motion.button>
-            </Link>
-            <Link href={`/trips/${tripId}/budget`}>
-              <motion.button whileHover={{ scale: 1.03 }} className="w-full btn-secondary justify-center py-3 text-sm">
-                Budget Details <ArrowRight className="w-4 h-4" />
-              </motion.button>
-            </Link>
+          <div className="space-y-3">
+            <div className="p-[0px]">
+              <Link href={`/trips/${tripId}/packing`}>
+                <motion.button
+                  whileHover={{ y: -2 }}
+                  className="w-full btn-secondary justify-center py-3 text-sm"
+                >
+                  Packing List <ArrowRight className="w-4 h-4" />
+                </motion.button>
+              </Link>
+            </div>
+
+            <div className="p-[0px]">
+              <Link href={`/trips/${tripId}/budget`}>
+                <motion.button
+                  whileHover={{ y: -2 }}
+                  className="w-full btn-secondary justify-center py-3 text-sm"
+                >
+                  Budget Details <ArrowRight className="w-4 h-4" />
+                </motion.button>
+              </Link>
+            </div>
           </div>
         </div>
 
@@ -286,8 +297,8 @@ export default function TripDetailPage({ params }: { params: Promise<{ tripId: s
               ))
             )}
           </div>
-          <motion.button 
-            whileHover={{ scale: 1.03 }} 
+          <motion.button
+            whileHover={{ scale: 1.03 }}
             onClick={() => setShowInviteModal(true)}
             className="w-full btn-secondary justify-center py-3 text-sm mt-auto"
           >
@@ -311,7 +322,16 @@ export default function TripDetailPage({ params }: { params: Promise<{ tripId: s
       </motion.div>
 
       {/* QUICK ACTIONS */}
-      <motion.div variants={item} className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <motion.div variants={item} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Link href={`/trips/${tripId}/map`}>
+          <motion.div whileHover={{ y: -4 }} className="glass-card p-6 text-center cursor-pointer">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center mx-auto mb-3">
+              <Map className="w-6 h-6 text-white" />
+            </div>
+            <h4 className="text-white font-bold mb-1">View Map</h4>
+            <p className="text-white/50 text-sm">Explore trip route</p>
+          </motion.div>
+        </Link>
         <Link href={`/trips/${tripId}/packing`}>
           <motion.div whileHover={{ y: -4 }} className="glass-card p-6 text-center cursor-pointer">
             <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-600 to-cyan-600 flex items-center justify-center mx-auto mb-3">
@@ -341,22 +361,15 @@ export default function TripDetailPage({ params }: { params: Promise<{ tripId: s
         </Link>
       </motion.div>
 
-      {/* Invite Member Modal */}
-      <InviteMemberModal
+      {/* Trip Crew Manager */}
+      <TripCrewManager
         isOpen={showInviteModal}
         onClose={() => setShowInviteModal(false)}
         tripId={tripId}
         tripTitle={trip?.title || ""}
         tripDestination={trip?.destination || ""}
-        onInviteSent={refreshMembers}
-      />
-      <InviteMemberModal
-        isOpen={showInviteModal}
-        onClose={() => setShowInviteModal(false)}
-        tripId={tripId}
-        tripTitle={trip?.title || ""}
-        tripDestination={trip?.destination || ""}
-        onInviteSent={refreshMembers}
+        joinCode={trip?.joinCode}
+        onMemberAdded={refreshMembers}
       />
     </motion.div>
   );
