@@ -10,6 +10,7 @@ export interface Trip {
   status: "planning" | "ongoing" | "completed" | "archived";
   description?: string;
   imageUrl?: string;
+  joinCode?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -216,6 +217,7 @@ export interface TripMember {
   tripId: string;
   userId: string;
   role: "owner" | "organizer" | "member";
+  permissions: "view" | "edit" | "admin";
   status: "pending" | "accepted" | "declined";
   invitedBy: string;
   invitedAt: Date;
@@ -244,14 +246,44 @@ export interface Invitation {
   invitedUserId?: string;
   invitedBy: string;
   token: string;
+  inviteMethod: "email" | "link" | "code" | "search";
   status: "pending" | "accepted" | "declined" | "expired";
   expiresAt: Date;
   createdAt: Date;
   updatedAt: Date;
 }
 
+// Collaboration Activity Feed
+export interface CollaborationActivity {
+  id: string;
+  tripId: string;
+  type: "member_joined" | "member_invited" | "member_left" | "role_changed" | "trip_updated";
+  actorId?: string;
+  actorName?: string;
+  targetUserId?: string;
+  targetUserName?: string;
+  message: string;
+  createdAt: Date;
+}
+
 // Extended Trip Types with Members
 export interface TripWithMembers extends Trip {
   members: TripMember[];
   memberCount: number;
+}
+
+// Trip Map Point Types
+export interface TripMapPoint {
+  id: string;
+  tripId: string;
+  name: string;
+  description?: string;
+  lat: number;
+  lng: number;
+  type: "destination" | "activity" | "hotel" | "restaurant" | "custom";
+  day?: number;
+  order: number;
+  activityId?: string;
+  createdAt: Date;
+  updatedAt: Date;
 }
