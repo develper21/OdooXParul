@@ -39,8 +39,8 @@ const getTripProgress = (trip: Trip) => {
 
 const quickActions = [
   { icon: Compass, label: "AI Planner", desc: "Generate smart itinerary", color: "from-purple-600 to-indigo-600", href: "/trips/create" },
-  { icon: Users, label: "Collaborate", desc: "Invite travel companions", color: "from-pink-600 to-rose-600", href: "/trips" },
-  { icon: Map, label: "Explore Map", desc: "Discover destinations", color: "from-orange-500 to-amber-600", href: "/trips" },
+  { icon: Users, label: "Collaborate", desc: "Join or invite friends", color: "from-pink-600 to-rose-600", href: "/join" },
+  { icon: Map, label: "Explore Map", desc: "Discover destinations", color: "from-orange-500 to-amber-600", href: "/map" },
 ];
 
 const trending = [
