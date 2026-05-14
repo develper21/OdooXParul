@@ -40,31 +40,31 @@ export default function InvitePage({ params }: { params: Promise<{ token: string
     setError(null);
 
     try {
-      // Check if user is logged in (would check for auth token/session in real app)
-      const isLoggedIn = false; // In real app: check for auth token
-      
       if (actionType === "accept") {
-        if (!isLoggedIn) {
-          // Redirect to login page with invitation info
-          router.push(`/login?token=${token}&action=accept`);
-        } else {
-          // User is logged in, accept invitation directly
-          const userId = "current-user-id"; // Get from auth context
-          await apiPost(`/api/invitations/${token}`, {
-            action: "accept",
-            userId: userId,
-          });
-          
+        const userRes = await apiGet<{ success: boolean; data: any }>("/api/auth/me");
+        const userId = userRes.data?.id;
+
+        if (!userId) {
+          localStorage.setItem("pendingInvitation", JSON.stringify({ token, action: "accept" }));
+          router.push(`/login?redirect=${encodeURIComponent(`/invite/${token}`)}`);
+          return;
+        }
+
+        const response = await apiPost(`/api/invitations/${token}`, {
+          action: "accept",
+          userId,
+        });
+
+        if (response.success) {
           setTimeout(() => {
             router.push(`/trips/${invitation?.tripId}`);
           }, 2000);
         }
       } else {
-        // Decline invitation (no login required)
         await apiPost(`/api/invitations/${token}`, {
           action: "decline",
         });
-        
+
         setTimeout(() => {
           router.push("/");
         }, 2000);

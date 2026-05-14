@@ -57,6 +57,10 @@ export default function TripCrewManager({
   const [email, setEmail] = useState("");
   const [members, setMembers] = useState<TripMemberWithUser[]>([]);
   const [pendingInvitations, setPendingInvitations] = useState<Invitation[]>([]);
+  const [currentUser, setCurrentUser] = useState<{ id: string; name?: string; email: string } | null>(null);
+  const [shareLink, setShareLink] = useState("");
+  const [shareLoading, setShareLoading] = useState(false);
+  const [shareError, setShareError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
   const searchTimeout = useRef<NodeJS.Timeout>();
@@ -71,6 +75,10 @@ export default function TripCrewManager({
         setMembers(membersRes.data || []);
         setPendingInvitations(invitesRes.data || []);
       }).catch(console.error);
+
+      apiGet<{ success: boolean; data: any }>("/api/auth/me")
+        .then((res) => setCurrentUser(res.data))
+        .catch(() => setCurrentUser(null));
     }
   }, [isOpen, tripId]);
 
@@ -101,19 +109,20 @@ export default function TripCrewManager({
   const handleInviteUser = async (user: SearchResult) => {
     setLoading(true);
     try {
+      const invitedBy = currentUser?.name || currentUser?.email || "Trip Organizer";
       await apiPost(`/api/invitations`, {
         tripId,
         tripTitle,
         tripDestination,
         invitedEmail: user.email,
         invitedUserId: user.id,
+        invitedBy,
         inviteMethod: "search"
       });
       
       setSearchQuery("");
       setSearchResults([]);
       
-      // Refresh pending invitations
       const invitesRes = await apiGet<{ success: boolean; data: Invitation[] }>(`/api/trips/${tripId}/invitations`);
       setPendingInvitations(invitesRes.data || []);
       
@@ -130,17 +139,18 @@ export default function TripCrewManager({
     
     setLoading(true);
     try {
+      const invitedBy = currentUser?.name || currentUser?.email || "Trip Organizer";
       await apiPost(`/api/invitations`, {
         tripId,
         tripTitle,
         tripDestination,
         invitedEmail: email,
+        invitedBy,
         inviteMethod: "email"
       });
       
       setEmail("");
       
-      // Refresh pending invitations
       const invitesRes = await apiGet<{ success: boolean; data: Invitation[] }>(`/api/trips/${tripId}/invitations`);
       setPendingInvitations(invitesRes.data || []);
       
@@ -156,7 +166,6 @@ export default function TripCrewManager({
     try {
       await apiDelete(`/api/trips/${tripId}/invitations?invitationId=${invitationId}`);
       
-      // Refresh pending invitations
       const invitesRes = await apiGet<{ success: boolean; data: Invitation[] }>(`/api/trips/${tripId}/invitations`);
       setPendingInvitations(invitesRes.data || []);
       
@@ -166,9 +175,36 @@ export default function TripCrewManager({
     }
   };
 
-  const copyInviteLink = async () => {
-    const inviteUrl = `${window.location.origin}/invitation/${tripId}`;
+  const createShareLink = async () => {
+    if (shareLink || shareLoading) return shareLink;
+    setShareLoading(true);
+    setShareError(null);
+
     try {
+      const invitedBy = currentUser?.name || currentUser?.email || "Trip Organizer";
+      const result = await apiPost<{ success: boolean; data: Invitation }>(`/api/invitations`, {
+        tripId,
+        tripTitle,
+        tripDestination,
+        invitedBy,
+        inviteMethod: "link",
+      });
+
+      const url = `${window.location.origin}/invite/${result.data.token}`;
+      setShareLink(url);
+      setPendingInvitations((prev) => [result.data, ...prev]);
+      return url;
+    } catch (error: any) {
+      setShareError(error.message || "Unable to generate link");
+      throw error;
+    } finally {
+      setShareLoading(false);
+    }
+  };
+
+  const copyInviteLink = async () => {
+    try {
+      const inviteUrl = shareLink || await createShareLink();
       await navigator.clipboard.writeText(inviteUrl);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
@@ -358,21 +394,30 @@ export default function TripCrewManager({
                 {inviteMethod === "link" && (
                   <div className="space-y-4">
                     <div className="p-4 bg-white/5 rounded-lg">
-                      <p className="text-white/60 text-sm mb-3">Share this link with friends:</p>
+                      <p className="text-white/60 text-sm mb-3">Generate a shareable invite link:</p>
                       <div className="flex gap-2">
                         <input
                           type="text"
-                          value={`${window.location.origin}/invite/${tripId}`}
+                          value={shareLink || "Create a link to share with anyone"}
                           readOnly
                           className="flex-1 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white text-sm"
                         />
                         <button
                           onClick={copyInviteLink}
-                          className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
+                          disabled={shareLoading}
+                          className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors disabled:opacity-50"
                         >
-                          {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                          {shareLoading ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : copied ? (
+                            <Check className="w-4 h-4" />
+                          ) : (
+                            <Copy className="w-4 h-4" />
+                          )}
                         </button>
                       </div>
+                      {shareError && <p className="text-red-300 text-xs mt-2">{shareError}</p>}
+                      <p className="text-white/40 text-xs mt-2">Friends can open this link to accept the invitation.</p>
                     </div>
                   </div>
                 )}

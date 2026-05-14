@@ -21,10 +21,12 @@ function LoginPageContent() {
   useEffect(() => {
     const token = searchParams.get("token");
     const action = searchParams.get("action");
-    
+    const redirect = searchParams.get("redirect");
+
     if (token && action === "accept") {
-      // Store invitation info for after login
       localStorage.setItem("pendingInvitation", JSON.stringify({ token, action }));
+    } else if (redirect) {
+      localStorage.setItem("pendingRedirect", redirect);
     }
   }, [searchParams]);
 
@@ -47,31 +49,59 @@ function LoginPageContent() {
 
       // Check for pending invitation after successful login
       const pendingInvitation = localStorage.getItem("pendingInvitation");
+      const pendingRedirect = localStorage.getItem("pendingRedirect");
+
       if (pendingInvitation) {
         const { token, action } = JSON.parse(pendingInvitation);
         localStorage.removeItem("pendingInvitation");
-        
+
         if (action === "accept") {
-          // Accept the invitation and redirect to trip
           try {
-            await fetch(`/api/invitations/${token}`, {
+            const userRes = await fetch("/api/auth/me", {
+              method: "GET",
+              credentials: "include",
+            });
+            const userData = await userRes.json();
+            const userId = userData?.data?.id;
+
+            if (!userRes.ok || !userId) {
+              throw new Error("Unable to determine current user");
+            }
+
+            const inviteRes = await fetch(`/api/invitations/${token}`, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ 
-                action: "accept",
-                userId: "current-user-id" // In real app, get from auth response
-              }),
+              credentials: "include",
+              body: JSON.stringify({ action: "accept", userId }),
             });
-            
-            router.push(`/trips/${token.split('-')[0]}`); // Extract tripId from token or use API
+            const inviteData = await inviteRes.json();
+
+            if (inviteRes.ok && inviteData?.data?.tripId) {
+              router.push(`/trips/${inviteData.data.tripId}`);
+            } else {
+              router.push(`/invite/${token}`);
+            }
           } catch (err) {
             console.error("Failed to accept invitation:", err);
             router.push("/dashboard");
           }
+          return;
         }
-      } else {
-        router.push("/dashboard");
       }
+
+      if (pendingRedirect) {
+        localStorage.removeItem("pendingRedirect");
+        router.push(pendingRedirect);
+        return;
+      }
+
+      const redirect = searchParams.get("redirect");
+      if (redirect) {
+        router.push(redirect);
+        return;
+      }
+
+      router.push("/dashboard");
     } catch (err: any) {
       setError(err?.message || "Unable to sign in.");
     } finally {

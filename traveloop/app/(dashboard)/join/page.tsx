@@ -46,24 +46,35 @@ export default function JoinPage() {
 
   const handleJoinTrip = async () => {
     if (!tripInfo) return;
-    
+
     setJoining(true);
     setError(null);
-    
+
     try {
-      // Get current user ID (this would come from auth context)
-      const currentUserId = localStorage.getItem('userId') || 'demo-user';
-      
+      const authRes = await fetch("/api/auth/me", {
+        method: "GET",
+        credentials: "include",
+      });
+      const authData = await authRes.json();
+
+      if (!authRes.ok || !authData?.data?.id) {
+        localStorage.setItem("pendingRedirect", `/join?code=${code}`);
+        router.push(`/login?redirect=${encodeURIComponent(`/join?code=${code}`)}`);
+        return;
+      }
+
+      const currentUserId = authData.data.id;
+
       const res = await apiPost<{ success: boolean; message: string; data: any }>(`/api/trips/${tripInfo.id}/join`, {
         code,
-        userId: currentUserId
+        userId: currentUserId,
       });
-      
+
       if (res.success) {
         setJoined(true);
         setTimeout(() => {
-          router.push(`/login?redirect=${encodeURIComponent(`/invitation/${tripInfo.id}`)}`);
-        }, 2000);
+          router.push(`/trips/${tripInfo.id}`);
+        }, 1500);
       }
     } catch (err: any) {
       setError(err.message || "Failed to join trip");

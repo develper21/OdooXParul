@@ -120,6 +120,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     return NextResponse.json({
       success: true,
       message: `Invitation ${newStatus} successfully`,
+      data: { tripId: invitation.tripId },
     });
   } catch (error) {
     console.error("Error processing invitation:", error);

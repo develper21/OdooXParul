@@ -45,11 +45,18 @@ export async function GET(request: NextRequest) {
 // POST /api/invitations - Send new invitation
 export async function POST(request: NextRequest) {
   try {
-    const { tripId, invitedEmail, invitedBy } = await request.json();
+    const { tripId, invitedEmail, invitedBy, invitedUserId, inviteMethod = "email" } = await request.json();
 
-    if (!tripId || !invitedEmail || !invitedBy) {
+    if (!tripId || !invitedBy) {
       return NextResponse.json(
-        { error: "Trip ID, invited email, and invited by are required" },
+        { error: "Trip ID and inviter name are required" },
+        { status: 400 }
+      );
+    }
+
+    if (inviteMethod !== "link" && !invitedEmail) {
+      return NextResponse.json(
+        { error: "Invited email is required for email/search invites" },
         { status: 400 }
       );
     }
@@ -62,37 +69,53 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Trip not found" }, { status: 404 });
     }
 
-    // Check if user is already a member
-    const existingMember = await db.collection("tripMembers").findOne({
-      tripId,
-      userId: { $exists: true }, // Will be updated when user accepts
-    });
-    
-    // Check if invitation already exists and is pending
-    const existingInvitation = await db.collection("invitations").findOne({
-      tripId,
-      invitedEmail,
-      status: "pending",
-    });
+    // Prevent inviting a user who is already a member.
+    let existingMember = null;
+    if (invitedUserId) {
+      existingMember = await db.collection("tripMembers").findOne({ tripId, userId: invitedUserId });
+    } else if (invitedEmail) {
+      const normalizedEmail = invitedEmail.trim().toLowerCase();
+      const invitedUser = await db.collection("users").findOne({ email: normalizedEmail });
+      if (invitedUser) {
+        existingMember = await db.collection("tripMembers").findOne({ tripId, userId: invitedUser._id.toString() });
+      }
+    }
 
-    if (existingInvitation) {
+    if (existingMember) {
       return NextResponse.json(
-        { error: "Invitation already sent to this email" },
+        { error: "The user is already a member of this trip" },
         { status: 409 }
       );
     }
 
-    // Generate invitation token
+    // Check if invitation already exists and is pending for non-link invites
+    if (inviteMethod !== "link" && invitedEmail) {
+      const normalizedEmail = invitedEmail.trim().toLowerCase();
+      const existingInvitation = await db.collection("invitations").findOne({
+        tripId,
+        invitedEmail: normalizedEmail,
+        status: "pending",
+      });
+
+      if (existingInvitation) {
+        return NextResponse.json(
+          { error: "Invitation already sent to this email" },
+          { status: 409 }
+        );
+      }
+    }
+
     const token = uuidv4();
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
 
-    // Create invitation
     const invitation: Omit<Invitation, "id"> = {
       tripId,
       tripTitle: trip.title,
       tripDestination: trip.destination,
-      invitedEmail,
+      invitedEmail: invitedEmail ? invitedEmail.trim().toLowerCase() : "",
+      invitedUserId,
       invitedBy,
+      inviteMethod,
       token,
       status: "pending",
       expiresAt,
@@ -101,22 +124,23 @@ export async function POST(request: NextRequest) {
     };
 
     const result = await db.collection("invitations").insertOne(invitation);
-    
-    // Send invitation email
-    const inviteUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/invite/${token}`;
-    const emailTemplate = generateInvitationEmail({
-      tripTitle: trip.title,
-      tripDestination: trip.destination,
-      invitedBy: invitedBy,
-      inviteUrl,
-      expiresAt: expiresAt.toDateString(),
-    });
 
-    await sendEmail({
-      to: invitedEmail,
-      subject: emailTemplate.subject,
-      html: emailTemplate.html,
-    });
+    if (inviteMethod !== "link" && invitedEmail) {
+      const inviteUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/invite/${token}`;
+      const emailTemplate = generateInvitationEmail({
+        tripTitle: trip.title,
+        tripDestination: trip.destination,
+        invitedBy,
+        inviteUrl,
+        expiresAt: expiresAt.toDateString(),
+      });
+
+      await sendEmail({
+        to: invitation.invitedEmail,
+        subject: emailTemplate.subject,
+        html: emailTemplate.html,
+      });
+    }
 
     return NextResponse.json({
       success: true,
