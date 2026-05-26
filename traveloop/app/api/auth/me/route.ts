@@ -6,7 +6,8 @@ import { ObjectId } from "mongodb";
 export async function GET(req: NextRequest) {
   try {
     const authHeader = req.headers.get("authorization");
-    const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
+    const cookieToken = req.cookies.get("auth-token")?.value;
+    const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : cookieToken;
 
     if (!token) {
       return NextResponse.json({ success: false, error: "Unauthorized." }, { status: 401 });

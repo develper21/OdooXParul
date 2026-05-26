@@ -1,20 +1,34 @@
 "use client";
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useState, useEffect, Suspense } from "react";
 import { Eye, EyeOff, Mail, Lock, ArrowRight, Plane, MapPin, Github } from "lucide-react";
 
 const BG = "https://images.unsplash.com/photo-1506197603052-3cc9c3a201bd?w=1200&q=80&auto=format";
 const f = (d = 0) => ({ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.55, delay: d } } });
 
-export default function LoginPage() {
+function LoginPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [show, setShow] = useState(false);
   const [email, setEmail] = useState("");
   const [pass, setPass] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  // Check for invitation parameters
+  useEffect(() => {
+    const token = searchParams.get("token");
+    const action = searchParams.get("action");
+    const redirect = searchParams.get("redirect");
+
+    if (token && action === "accept") {
+      localStorage.setItem("pendingInvitation", JSON.stringify({ token, action }));
+    } else if (redirect) {
+      localStorage.setItem("pendingRedirect", redirect);
+    }
+  }, [searchParams]);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -31,6 +45,60 @@ export default function LoginPage() {
 
       if (!res.ok) {
         throw new Error(result?.error || result?.message || "Unable to sign in.");
+      }
+
+      // Check for pending invitation after successful login
+      const pendingInvitation = localStorage.getItem("pendingInvitation");
+      const pendingRedirect = localStorage.getItem("pendingRedirect");
+
+      if (pendingInvitation) {
+        const { token, action } = JSON.parse(pendingInvitation);
+        localStorage.removeItem("pendingInvitation");
+
+        if (action === "accept") {
+          try {
+            const userRes = await fetch("/api/auth/me", {
+              method: "GET",
+              credentials: "include",
+            });
+            const userData = await userRes.json();
+            const userId = userData?.data?.id;
+
+            if (!userRes.ok || !userId) {
+              throw new Error("Unable to determine current user");
+            }
+
+            const inviteRes = await fetch(`/api/invitations/${token}`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              credentials: "include",
+              body: JSON.stringify({ action: "accept", userId }),
+            });
+            const inviteData = await inviteRes.json();
+
+            if (inviteRes.ok && inviteData?.data?.tripId) {
+              router.push(`/trips/${inviteData.data.tripId}`);
+            } else {
+              router.push(`/invite/${token}`);
+            }
+          } catch (err) {
+            console.error("Failed to accept invitation:", err);
+            router.push("/dashboard");
+          }
+          return;
+        }
+      }
+
+      if (pendingRedirect) {
+        localStorage.removeItem("pendingRedirect");
+        router.push(pendingRedirect);
+        return;
+      }
+
+      const redirect = searchParams.get("redirect");
+      if (redirect) {
+        router.push(redirect);
+        return;
       }
 
       router.push("/dashboard");
@@ -195,5 +263,13 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <LoginPageContent />
+    </Suspense>
   );
 }

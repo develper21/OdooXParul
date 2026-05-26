@@ -67,6 +67,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: "Trip title, destination, dates, and budget are required." }, { status: 400 });
     }
 
+    const generateJoinCode = () => Math.floor(100000 + Math.random() * 900000).toString();
+
     const trip = {
       title,
       destination,
@@ -77,6 +79,7 @@ export async function POST(req: NextRequest) {
       status: String(body.status || "planning"),
       description: String(body.description || ""),
       imageUrl: String(body.imageUrl || ""),
+      joinCode: generateJoinCode(),
       createdAt: new Date(),
       updatedAt: new Date(),
     };

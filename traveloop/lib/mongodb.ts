@@ -3,14 +3,15 @@ import { MongoClient, Db } from "mongodb";
 const uri = process.env.MONGODB_URI || process.env.DATABASE_URL || "";
 const dbName = process.env.MONGODB_DB || "traveloop";
 
-if (!uri) {
-  throw new Error("Missing MONGODB_URI or DATABASE_URL environment variable.");
-}
 
 let cachedClient: MongoClient | null = null;
 let cachedDb: Db | null = null;
 
 export async function connectToDatabase() {
+  if (!uri) {
+    throw new Error("Database connection string (MONGODB_URI) is missing in .env.local file!");
+  }
+  
   if (cachedDb && cachedClient) {
     return { client: cachedClient, db: cachedDb };
   }

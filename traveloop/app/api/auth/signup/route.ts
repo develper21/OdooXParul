@@ -64,7 +64,7 @@ export async function POST(req: NextRequest) {
     });
 
     return response;
-  } catch (error) {
-    return NextResponse.json({ success: false, error: "Unable to create account." }, { status: 500 });
+  } catch (error: any) {
+    return NextResponse.json({ success: false, error: error?.message || "Unable to create account." }, { status: 500 });
   }
 }

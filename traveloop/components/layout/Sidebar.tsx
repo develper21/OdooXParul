@@ -6,8 +6,8 @@ import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
 import {
   LayoutGrid, MapPin, PlusCircle, Map,
-  WalletCards, Settings2, LogOut, Compass, Plane,
-  Sparkles, Crown, LifeBuoy
+  WalletCards, Settings2, LogOut, Plane,
+  Sparkles
 } from "lucide-react";
 
 const menuItems = [
@@ -25,7 +25,13 @@ const bottomItems = [
 
 export const Sidebar: React.FC = () => {
   const pathname = usePathname();
-  const isActive = (href: string) => pathname === href || (href !== "/dashboard" && pathname.startsWith(href));
+  const isActive = (href: string) => {
+  if (href === "/dashboard") return pathname === href;
+  if (pathname === href) return true;
+  if (href === "/trips") return pathname === "/trips";
+
+  return pathname.startsWith(href);
+};
 
   return (
     <motion.aside
@@ -82,7 +88,7 @@ export const Sidebar: React.FC = () => {
                 <Link key={item.label} href={item.href} className="block relative group">
                   {/* Active Beam Indicator */}
                   {active && (
-                    <motion.div layoutId="activeNavBeam" className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-gradient-to-b from-cyan-400 to-purple-500 rounded-r-full shadow-[0_0_15px_rgba(124,58,237,0.5)]" />
+                    <motion.div layoutId="activeNavBeam" className="absolute left-0 top-1 w-1 h-8 bg-gradient-to-b from-cyan-400 to-purple-500 rounded-r-full shadow-[0_0_15px_rgba(124,58,237,0.5)]" />
                   )}
                   <motion.div
                     whileHover={{ x: active ? 0 : 4, backgroundColor: active ? "" : "rgba(255,255,255,0.03)" }}
