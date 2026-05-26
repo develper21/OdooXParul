@@ -34,10 +34,12 @@ export async function POST(req: NextRequest) {
       { status: 200 }
     );
 
+    const isSecure = req.nextUrl.protocol === 'https:' || req.headers.get("x-forwarded-proto") === "https";
+
     // Set secure cookie with 30-day expiration
     response.cookies.set('auth-token', token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: isSecure,
       sameSite: 'lax',
       maxAge: 30 * 24 * 60 * 60, // 30 days in seconds
       path: '/',
