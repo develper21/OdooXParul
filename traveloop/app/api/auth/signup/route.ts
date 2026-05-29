@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
     // Set HTTP-only cookie for persistent session
     const response = NextResponse.json(
       { success: true, data: serializeDocument(safeUser), message: "Account created successfully." }, 
-      { status: 201 }
+      { status: 200 }
     );
 
     const isSecure = req.nextUrl.protocol === 'https:' || req.headers.get("x-forwarded-proto") === "https";

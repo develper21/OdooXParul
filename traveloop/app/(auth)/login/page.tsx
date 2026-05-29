@@ -34,7 +34,7 @@ export default function LoginPage() {
         throw new Error(result?.error || result?.message || "Unable to sign in.");
       }
 
-      router.push("/dashboard");
+      window.location.href = "/dashboard";
     } catch (err: any) {
       setError(err?.message || "Unable to sign in.");
     } finally {
