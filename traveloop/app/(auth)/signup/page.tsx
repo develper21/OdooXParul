@@ -39,7 +39,7 @@ export default function SignupPage() {
       if (!res.ok) {
         throw new Error(result?.error || result?.message || "Unable to create account.");
       }
-      router.push("/dashboard");
+      window.location.href = "/dashboard";
     } catch (err: any) {
       setError(err?.message || "Unable to create account.");
     } finally {
