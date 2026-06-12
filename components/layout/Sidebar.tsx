@@ -7,7 +7,7 @@ import { motion } from "framer-motion";
 import {
   LayoutGrid, MapPin, PlusCircle, Map,
   WalletCards, Settings2, LogOut, Plane,
-  Sparkles
+  Compass, Users, ArrowRight,
 } from "lucide-react";
 
 const menuItems = [
@@ -21,6 +21,12 @@ const menuItems = [
 const bottomItems = [
   { icon: Settings2, label: "Settings", href: "/settings" },
   { icon: LogOut, label: "Sign Out", href: "/" },
+];
+
+const quickActions = [
+  { icon: Compass, label: "AI Planner", desc: "Generate smart itinerary", href: "/trips/create" },
+  { icon: Users, label: "Collaborate", desc: "Join or invite friends", href: "/join" },
+  { icon: Map, label: "Explore Map", desc: "Discover destinations", href: "/map" },
 ];
 
 export const Sidebar: React.FC = () => {
@@ -62,7 +68,7 @@ export const Sidebar: React.FC = () => {
               className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-[0_0_30px_rgba(124,58,237,0.4)] relative overflow-hidden group-hover:shadow-[0_0_40px_rgba(124,58,237,0.6)] transition-shadow">
               <div className="absolute inset-0 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500" />
               <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-20" />
-              <Plane className="w-6 h-6 text-white relative z-10" />
+              <img src="/favicon.png" alt="Traveloop" className="w-6 h-6 relative z-10" />
             </motion.div>
             <div>
               <h1 className="font-bold text-2xl text-white tracking-tight" style={{ fontFamily: "var(--font-playfair)" }}>
@@ -77,7 +83,7 @@ export const Sidebar: React.FC = () => {
 
 
         {/* ── MAIN NAVIGATION ── */}
-        <div className="space-y-4">
+        <div className="flex-1 space-y-4">
           <p className="px-2 text-[10px] font-bold uppercase tracking-[0.2em] text-white/30">
             Core Navigation
           </p>
@@ -110,45 +116,28 @@ export const Sidebar: React.FC = () => {
               );
             })}
           </nav>
-        </div>
 
-        {/* ── TRAVEL PROGRESS / REWARDS ── */}
-        <div className="space-y-4">
-          <p className="px-2 text-[10px] font-bold uppercase tracking-[0.2em] text-white/30">
-            Rewards Progress
-          </p>
-          <div className="mx-2 p-4 rounded-2xl bg-gradient-to-br from-amber-500/10 to-orange-500/5 border border-amber-500/20 shadow-lg relative overflow-hidden">
-            <div className="absolute -right-4 -top-4 w-16 h-16 bg-amber-500/20 rounded-full blur-xl" />
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs text-amber-100 font-semibold tracking-wide">Elite Status</span>
-              <span className="text-xs text-amber-400 font-bold">12k / 15k</span>
-            </div>
-            <div className="h-1.5 w-full bg-black/50 rounded-full overflow-hidden border border-white/5">
-              <motion.div className="h-full bg-gradient-to-r from-amber-500 to-orange-400" initial={{ width: 0 }} animate={{ width: "80%" }} transition={{ duration: 1.5, delay: 0.5 }} />
-            </div>
-            <p className="text-[10px] text-amber-200/60 mt-2 tracking-wide font-light">3,000 pts to next tier unlock</p>
-          </div>
-        </div>
-
-        {/* ── AI TRAVEL ASSISTANT PANEL ── */}
-        <div className="space-y-4 mt-auto pt-4">
-          <p className="px-2 text-[10px] font-bold uppercase tracking-[0.2em] text-white/30">
-            AI Intelligence
-          </p>
-          <div className="mx-2 p-4 rounded-2xl relative overflow-hidden group border border-purple-500/20 bg-purple-500/[0.03] shadow-[0_10px_30px_rgba(124,58,237,0.1)]">
-            <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/10 to-purple-500/10 opacity-50 group-hover:opacity-100 transition-opacity duration-500" />
-            <motion.div animate={{ opacity: [0.5, 0.8, 0.5], scale: [1, 1.05, 1] }} transition={{ duration: 3, repeat: Infinity }} className="absolute -right-10 -top-10 w-32 h-32 bg-cyan-500/20 rounded-full blur-2xl pointer-events-none" />
-            
-            <div className="relative z-10">
-              <div className="flex items-center gap-2 mb-3">
-                <div className="w-7 h-7 rounded-lg bg-purple-500/20 flex items-center justify-center border border-purple-500/30 shadow-[0_0_15px_rgba(124,58,237,0.3)]">
-                  <Sparkles className="w-4 h-4 text-cyan-400" />
-                </div>
-                <span className="text-[10px] font-bold text-cyan-300 tracking-[0.15em] uppercase">AI Assistant</span>
-              </div>
-              <p className="text-xs leading-relaxed font-light text-white/80">
-                Flights to <span className="text-white font-semibold">Tokyo</span> are currently <span className="text-emerald-400 font-bold">18% cheaper</span> this week. Consider booking now.
-              </p>
+          {/* ── QUICK ACTIONS ── */}
+          <div className="pt-4">
+            <p className="px-2 text-[10px] font-bold uppercase tracking-[0.2em] text-white/30 mb-4">
+              Quick Actions
+            </p>
+            <div>
+              {quickActions.map((a, i) => (
+                <Link key={i} href={a.href}>
+                  <motion.div whileHover={{ x: 4, backgroundColor: "rgba(255,255,255,0.03)" }} 
+                    className="group p-3 rounded-xl bg-white/[0.01] border border-white/5 flex items-center gap-3 cursor-pointer transition-all hover:border-white/10 ml-2 mb-4">
+                    <div className={`w-10 h-10 rounded-lg bg-gradient-to-br flex items-center justify-center shrink-0 shadow-lg`}>
+                      <a.icon className="w-4 h-4 text-white" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-xs font-medium text-white tracking-wide group-hover:text-purple-300 transition-colors">{a.label}</p>
+                      <p className="text-[10px] text-white/40 font-light">{a.desc}</p>
+                    </div>
+                    <ArrowRight className="w-3.5 h-3.5 text-white/20 group-hover:text-white/60 transition-colors" />
+                  </motion.div>
+                </Link>
+              ))}
             </div>
           </div>
         </div>
@@ -165,17 +154,6 @@ export const Sidebar: React.FC = () => {
           ))}
         </div>
       </div>
-
-      {/* ── FLOATING AI ACTION BUTTON ── */}
-      <motion.button 
-        whileHover={{ scale: 1.1, rotate: 15 }} 
-        whileTap={{ scale: 0.9 }}
-        className="absolute -right-6 bottom-12 w-12 h-12 rounded-full bg-gradient-to-tr from-cyan-500 to-purple-600 flex items-center justify-center shadow-[0_0_30px_rgba(124,58,237,0.5)] border border-white/20 z-50 group"
-      >
-        <Sparkles className="w-5 h-5 text-white" />
-        {/* Pulse effect */}
-        <div className="absolute inset-0 rounded-full border border-purple-400/50 animate-ping opacity-20" style={{ animationDuration: '3s' }} />
-      </motion.button>
     </motion.aside>
   );
 };
