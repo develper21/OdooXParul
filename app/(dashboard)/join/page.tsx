@@ -93,8 +93,8 @@ export default function JoinPage() {
   }, [code]);
 
   return (
-    <div className="min-h-screen bg-[#050810] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-gradient-to-br from-purple-900/20 to-blue-900/20" />
+    <div className="min-h-screen flex items-center justify-center p-4">
+      <div className="absolute inset-0" />
       
       <motion.div
         initial={{ opacity: 0, y: 20 }}
