@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { MapPin, Users, Calendar, TrendingUp, Plus, Compass, ArrowRight, Plane, Globe, Zap, DollarSign, Clock, Map, Star, Shield, LayoutGrid } from "lucide-react";
+import { MapPin, Users, Calendar, TrendingUp, Plus, Compass, ArrowRight, Plane, Globe, DollarSign, Clock, Map, Star, Shield } from "lucide-react";
 import { apiGet } from "@/lib/api";
 import { Trip } from "@/lib/types";
 
@@ -37,12 +37,6 @@ const getTripProgress = (trip: Trip) => {
   return Math.round(((now - start) / (end - start)) * 100);
 };
 
-const quickActions = [
-  { icon: Compass, label: "AI Planner", desc: "Generate smart itinerary", color: "from-purple-600 to-indigo-600", href: "/trips/create" },
-  { icon: Users, label: "Collaborate", desc: "Join or invite friends", color: "from-pink-600 to-rose-600", href: "/join" },
-  { icon: Map, label: "Explore Map", desc: "Discover destinations", color: "from-orange-500 to-amber-600", href: "/map" },
-];
-
 const trending = [
   { name: "Maldives", type: "Luxury Resort", rating: "4.9", img: "https://images.unsplash.com/photo-1514282401047-d79a71a590e8?w=400&q=80" },
   { name: "Santorini", type: "Culture & Views", rating: "4.8", img: "https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?w=400&q=80" },
@@ -53,6 +47,9 @@ export default function Dashboard() {
   const [trips, setTrips] = useState<Trip[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [location, setLocation] = useState<{ name: string; lat: number; lon: number } | null>(null);
+  const [weather, setWeather] = useState<{ tempC: number; tempF: number; condition: string; icon: string } | null>(null);
+  const [locationLoading, setLocationLoading] = useState(true);
 
   useEffect(() => {
     let active = true;
@@ -77,6 +74,123 @@ export default function Dashboard() {
       active = false;
     };
   }, []);
+
+  // Fetch location and weather data
+  useEffect(() => {
+    let active = true;
+    setLocationLoading(true);
+
+    // Get user's current location
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          if (!active) return;
+          const { latitude, longitude } = position.coords;
+
+          // Get location name using reverse geocoding
+          try {
+            const geoRes = await fetch(
+              `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=10`
+            );
+            
+            if (!geoRes.ok) {
+              throw new Error(`Geocoding API failed: ${geoRes.status}`);
+            }
+            
+            const geoData = await geoRes.json();
+            const locationName = geoData.address?.city || geoData.address?.town || geoData.address?.village || geoData.address?.county || geoData.address?.state || "Unknown Location";
+
+            if (active) {
+              setLocation({ name: locationName, lat: latitude, lon: longitude });
+
+              // Get weather data using Open-Meteo
+              try {
+                const weatherRes = await fetch(
+                  `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,weather_code&timezone=auto`
+                );
+                
+                if (!weatherRes.ok) {
+                  throw new Error(`Weather API failed: ${weatherRes.status}`);
+                }
+                
+                const weatherData = await weatherRes.json();
+                
+                if (active && weatherData.current) {
+                  const tempCelsius = Math.round(weatherData.current.temperature_2m);
+                  const tempFahrenheit = Math.round((tempCelsius * 9/5) + 32);
+                  const weatherCode = weatherData.current.weather_code;
+                  const condition = getWeatherCondition(weatherCode);
+                  const icon = getWeatherIcon(weatherCode);
+                  
+                  setWeather({ tempC: tempCelsius, tempF: tempFahrenheit, condition, icon });
+                }
+              } catch (weatherErr) {
+                // Set default weather if weather API fails
+                if (active) {
+                  setWeather({ tempC: 22, tempF: 72, condition: "Clear sky", icon: "☀" });
+                }
+              }
+            }
+          } catch (err) {
+            if (active) {
+              setLocation({ name: "Your Location", lat: latitude, lon: longitude });
+              setWeather({ tempC: 22, tempF: 72, condition: "Clear sky", icon: "☀" });
+            }
+          } finally {
+            if (active) setLocationLoading(false);
+          }
+        },
+        (error) => {
+          console.error("Geolocation error:", error);
+          console.error("Error code:", error.code);
+          console.error("Error message:", error.message);
+          if (active) {
+            setLocationLoading(false);
+            setLocation(null);
+            // Set default weather as fallback
+            setWeather({ tempC: 22, tempF: 72, condition: "Clear sky", icon: "☀" });
+          }
+        }
+      );
+    } else {
+      setLocationLoading(false);
+      // Set default data as fallback
+      setLocation({ name: "Location unavailable", lat: 0, lon: 0 });
+      setWeather({ tempC: 22, tempF: 72, condition: "Clear sky", icon: "☀" });
+    }
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  // Helper function to get weather condition from WMO code
+  const getWeatherCondition = (code: number): string => {
+    const conditions: Record<number, string> = {
+      0: "Clear sky",
+      1: "Mainly clear", 2: "Partly cloudy", 3: "Overcast",
+      45: "Fog", 48: "Depositing rime fog",
+      51: "Light drizzle", 53: "Moderate drizzle", 55: "Dense drizzle",
+      61: "Slight rain", 63: "Moderate rain", 65: "Heavy rain",
+      71: "Slight snow", 73: "Moderate snow", 75: "Heavy snow",
+      80: "Slight rain showers", 81: "Moderate rain showers", 82: "Violent rain showers",
+      95: "Thunderstorm", 96: "Thunderstorm with hail", 99: "Thunderstorm with heavy hail"
+    };
+    return conditions[code] || "Unknown";
+  };
+
+  // Helper function to get weather icon emoji
+  const getWeatherIcon = (code: number): string => {
+    if (code === 0) return "☀";
+    if (code >= 1 && code <= 3) return "⛅";
+    if (code >= 45 && code <= 48) return "🌫";
+    if (code >= 51 && code <= 55) return "🌧";
+    if (code >= 61 && code <= 65) return "🌧";
+    if (code >= 71 && code <= 75) return "❄";
+    if (code >= 80 && code <= 82) return "🌧";
+    if (code >= 95) return "⛈";
+    return "☀";
+  };
 
   const activeTrips = useMemo(() => trips.filter((trip) => trip.status !== "completed").length, [trips]);
   const destinations = useMemo(() => getDestinationCount(trips), [trips]);
@@ -106,11 +220,15 @@ export default function Dashboard() {
         <div className="absolute top-6 right-6 hidden md:flex items-center gap-4">
           <div className="glass px-4 py-2 rounded-xl flex items-center gap-2 border border-white/10">
             <MapPin className="w-4 h-4 text-white/70" />
-            <span className="text-white text-sm font-medium tracking-wide">Current Location: New York</span>
+            <span className="text-white text-sm font-medium tracking-wide">
+              {locationLoading ? "Locating..." : location ? `Current Location: ${location.name}` : "Location unavailable"}
+            </span>
           </div>
           <div className="glass px-4 py-2 rounded-xl flex items-center gap-2 border border-white/10">
-            <span className="text-yellow-400">☀</span>
-            <span className="text-white text-sm font-medium">72°F</span>
+            <span className="text-yellow-400">{weather ? weather.icon : "☀"}</span>
+            <span className="text-white text-sm font-medium">
+              {locationLoading ? "..." : weather ? `${weather.tempC}°C/${weather.tempF}°F` : "--"}
+            </span>
           </div>
         </div>
 
@@ -240,30 +358,6 @@ export default function Dashboard() {
         {/* RIGHT COLUMN (Right: 4 cols) */}
         <div className="lg:col-span-4 space-y-8">
           
-          {/* Quick Actions */}
-          <div>
-            <h3 className="text-white font-bold mb-4 flex items-center gap-2 tracking-wide" style={{ fontFamily: "var(--font-playfair)" }}>
-              <LayoutGrid className="w-4 h-4 text-purple-400" /> Quick Actions
-            </h3>
-            <div className="grid grid-cols-1 gap-3">
-              {quickActions.map((a, i) => (
-                <Link key={i} href={a.href}>
-                  <motion.div whileHover={{ x: 4, backgroundColor: "rgba(255,255,255,0.03)" }} 
-                    className="group p-4 rounded-2xl bg-white/[0.01] border border-white/5 flex items-center gap-4 cursor-pointer transition-all hover:border-white/10">
-                    <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${a.color} flex items-center justify-center shrink-0 shadow-lg`}>
-                      <a.icon className="w-5 h-5 text-white" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-white tracking-wide group-hover:text-purple-300 transition-colors">{a.label}</p>
-                      <p className="text-xs text-white/40 font-light">{a.desc}</p>
-                    </div>
-                    <ArrowRight className="w-4 h-4 text-white/20 group-hover:text-white/60 transition-colors" />
-                  </motion.div>
-                </Link>
-              ))}
-            </div>
-          </div>
-
           {/* Trending Destinations */}
           <div>
             <h3 className="text-white font-bold mb-4 flex items-center gap-2 tracking-wide" style={{ fontFamily: "var(--font-playfair)" }}>
