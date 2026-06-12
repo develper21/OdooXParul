@@ -9,6 +9,10 @@ export const metadata: Metadata = {
   title: "Traveloop — Premium Travel Planning Platform",
   description: "Plan your perfect multi-city journey with Traveloop. Luxury travel management, AI itineraries & smart budget tracking.",
   keywords: ["travel", "trip planner", "itinerary", "luxury travel", "vacation planning"],
+  icons: {
+    icon: "/favicon.png",
+    apple: "/favicon.png",
+  },
   openGraph: {
     title: "Traveloop — Premium Travel Planning",
     description: "Your cinematic travel planning experience",
