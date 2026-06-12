@@ -2,10 +2,11 @@
 import { use, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { Users, DollarSign, MapPin, ArrowRight, Clock, TrendingUp, Plane, Share2, Edit2, Heart, MessageSquare, UserPlus, Crown, Shield, Map } from "lucide-react";
+import { Users, DollarSign, MapPin, ArrowRight, Clock, TrendingUp, Plane, Share2, Edit2, Heart, MessageSquare, UserPlus, Crown, Shield, Map, Library } from "lucide-react";
 import { apiGet } from "@/lib/api";
 import { Trip, Activity, BudgetSummary, TripMemberWithUser } from "@/lib/types";
 import TripCrewManager from "@/components/TripCrewManager";
+import ShareTripModal from "@/components/ShareTripModal";
 
 export default function TripDetailPage({ params }: { params: Promise<{ tripId: string }> }) {
   const { tripId } = use(params);
@@ -16,6 +17,7 @@ export default function TripDetailPage({ params }: { params: Promise<{ tripId: s
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showInviteModal, setShowInviteModal] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -146,18 +148,23 @@ export default function TripDetailPage({ params }: { params: Promise<{ tripId: s
           <Plane className="w-24 h-24 text-white" />
         </motion.div>
 
-        <div className="absolute bottom-0 left-0 right-0 p-8">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <span className="badge-planning mb-3 inline-flex">{trip.status}</span>
-              <h1 className="text-4xl md:text-5xl font-bold text-white mb-2" style={{ fontFamily: "var(--font-playfair)" }}>{trip.title}</h1>
-              <p className="text-white/60 flex items-center gap-2"><MapPin className="w-4 h-4" />{trip.destination}</p>
-            </div>
-            <div className="hidden md:flex gap-3">
-              <motion.button whileHover={{ scale: 1.05 }} className="btn-secondary py-2.5 px-4 text-sm"><Share2 className="w-4 h-4" />Share</motion.button>
-              <motion.button whileHover={{ scale: 1.05 }} className="btn-secondary py-2.5 px-4 text-sm"><Edit2 className="w-4 h-4" />Edit</motion.button>
-              <motion.button whileHover={{ scale: 1.05 }} className="btn-secondary py-2.5 px-4 text-sm"><Heart className="w-4 h-4" /></motion.button>
-            </div>
+        <div className="absolute inset-0 p-8 flex flex-col justify-between">
+          <div>
+            <span className="badge-planning mb-3 inline-flex">{trip.status}</span>
+            <h1 className="text-4xl md:text-5xl font-bold text-white mb-2" style={{ fontFamily: "var(--font-playfair)" }}>{trip.title}</h1>
+            <p className="text-white/60 flex items-center gap-2"><MapPin className="w-4 h-4" />{trip.destination}</p>
+          </div>
+          <div className="hidden md:flex gap-3">
+            <Link href={`/trips/${tripId}/notes`}>
+              <motion.button whileHover={{ scale: 1.05 }} className="btn-secondary py-2.5 px-4 text-sm h-10 flex items-center gap-2"><MessageSquare className="text-lg" />Notes</motion.button>
+            </Link>
+            <Link href={`/trips/${tripId}/activities`}>
+              <motion.button whileHover={{ scale: 1.05 }} className="btn-secondary py-2.5 px-4 text-sm h-10 flex items-center gap-2"><Library className="text-lg" />Activities</motion.button>
+            </Link>
+            <motion.button whileHover={{ scale: 1.05 }} onClick={() => setShowShareModal(true)} className="btn-secondary py-2.5 px-4 text-sm h-10 flex items-center gap-2"><Share2 className="w-4 h-4" />Share</motion.button>
+            <Link href={`/trips/${tripId}/edit`}>
+              <motion.button whileHover={{ scale: 1.05 }} className="btn-secondary py-2.5 px-4 text-sm h-10 flex items-center gap-2"><Edit2 className="w-4 h-4" />Edit</motion.button>
+            </Link>
           </div>
         </div>
       </motion.div>
@@ -321,46 +328,6 @@ export default function TripDetailPage({ params }: { params: Promise<{ tripId: s
         </div>
       </motion.div>
 
-      {/* QUICK ACTIONS */}
-      <motion.div variants={item} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Link href={`/trips/${tripId}/map`}>
-          <motion.div whileHover={{ y: -4 }} className="glass-card p-6 text-center cursor-pointer">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center mx-auto mb-3">
-              <Map className="w-6 h-6 text-white" />
-            </div>
-            <h4 className="text-white font-bold mb-1">View Map</h4>
-            <p className="text-white/50 text-sm">Explore trip route</p>
-          </motion.div>
-        </Link>
-        <Link href={`/trips/${tripId}/packing`}>
-          <motion.div whileHover={{ y: -4 }} className="glass-card p-6 text-center cursor-pointer">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-600 to-cyan-600 flex items-center justify-center mx-auto mb-3">
-              <span className="text-2xl">🧳</span>
-            </div>
-            <h4 className="text-white font-bold mb-1">Packing List</h4>
-            <p className="text-white/50 text-sm">Track what to pack</p>
-          </motion.div>
-        </Link>
-        <Link href={`/trips/${tripId}/notes`}>
-          <motion.div whileHover={{ y: -4 }} className="glass-card p-6 text-center cursor-pointer">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center mx-auto mb-3">
-              <MessageSquare className="w-6 h-6 text-white" />
-            </div>
-            <h4 className="text-white font-bold mb-1">Trip Notes</h4>
-            <p className="text-white/50 text-sm">Document memories</p>
-          </motion.div>
-        </Link>
-        <Link href={`/trips/${tripId}/activities`}>
-          <motion.div whileHover={{ y: -4 }} className="glass-card p-6 text-center cursor-pointer">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center mx-auto mb-3">
-              <span className="text-2xl">🎯</span>
-            </div>
-            <h4 className="text-white font-bold mb-1">Activities</h4>
-            <p className="text-white/50 text-sm">Manage itinerary</p>
-          </motion.div>
-        </Link>
-      </motion.div>
-
       {/* Trip Crew Manager */}
       <TripCrewManager
         isOpen={showInviteModal}
@@ -370,6 +337,15 @@ export default function TripDetailPage({ params }: { params: Promise<{ tripId: s
         tripDestination={trip?.destination || ""}
         joinCode={trip?.joinCode}
         onMemberAdded={refreshMembers}
+      />
+
+      {/* Share Trip Modal */}
+      <ShareTripModal
+        isOpen={showShareModal}
+        onClose={() => setShowShareModal(false)}
+        tripId={tripId}
+        tripTitle={trip?.title || ""}
+        tripDestination={trip?.destination || ""}
       />
     </motion.div>
   );
