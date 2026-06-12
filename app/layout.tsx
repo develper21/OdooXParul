@@ -22,7 +22,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <meta name="theme-color" content="#0a0e1a" />
       </head>
-      <body className={`${inter.variable} ${playfair.variable} font-sans bg-background text-foreground antialiased`}>
+      <body className={`${inter.variable} ${playfair.variable} font-sans bg-background text-foreground antialiased`} suppressHydrationWarning>
         {children}
       </body>
     </html>
