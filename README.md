@@ -41,7 +41,6 @@ Every screen is crafted with a premium design language inspired by:
 ---
 
 # ✨ Core Experience
-
 ## 🧠 AI-Powered Travel Planning
 
 Traveloop helps users:
