@@ -105,6 +105,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
           tripId: invitation.tripId,
           userId: userId,
           role: "member",
+          permissions: "view",
           status: "accepted",
           invitedBy: invitation.invitedBy,
           invitedAt: invitation.createdAt,
