@@ -126,7 +126,8 @@ export async function POST(request: NextRequest) {
     const result = await db.collection("invitations").insertOne(invitation);
 
     if (inviteMethod !== "link" && invitedEmail) {
-      const inviteUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/invite/${token}`;
+      const appBaseUrl = (process.env.NEXT_PUBLIC_APP_DOMAIN || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000').replace(/\/+$/, '');
+      const inviteUrl = `${appBaseUrl}/invite/${token}`;
       const emailTemplate = generateInvitationEmail({
         tripTitle: trip.title,
         tripDestination: trip.destination,
