@@ -143,7 +143,7 @@ function LoginPageContent() {
                 <span className="bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-cyan-300">Awaits.</span>
               </h1>
               <p className="text-white/60 text-lg leading-relaxed font-light">
-                Continue crafting your extraordinary adventures with Traveloop's premium planning experience.
+                Continue crafting your extraordinary adventures with Traveloop&apos;s premium planning experience.
               </p>
             </motion.div>
 
