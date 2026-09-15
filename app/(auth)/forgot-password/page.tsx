@@ -106,7 +106,7 @@ export default function ForgotPasswordPage() {
                 <span className="bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-cyan-300">Password</span>
               </h1>
               <p className="text-white/60 text-lg leading-relaxed font-light">
-                We'll help you regain access to your travel planning account with secure OTP verification.
+                We&apos;ll help you regain access to your travel planning account with secure OTP verification.
               </p>
             </motion.div>
 
