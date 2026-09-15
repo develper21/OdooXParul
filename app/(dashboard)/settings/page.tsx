@@ -405,7 +405,7 @@ export default function SettingsPage() {
                           <Laptop className="w-5 h-5 text-emerald-400" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-semibold text-white tracking-wide">MacBook Pro 16"</p>
+                          <p className="text-sm font-semibold text-white tracking-wide">MacBook Pro 16&quot;</p>
                           <p className="text-xs text-emerald-400/80 mt-0.5">Current Session • New York</p>
                         </div>
                       </div>
