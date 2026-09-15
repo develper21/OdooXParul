@@ -114,7 +114,7 @@ export default function CreateTripPage() {
             Design Your Next Escape
           </h1>
           <p className="text-white/70 font-light text-sm max-w-lg leading-relaxed">
-            Let's craft the perfect luxury itinerary. Follow our cinematic guide to customize every aspect of your journey.
+            Let&apos;s craft the perfect luxury itinerary. Follow our cinematic guide to customize every aspect of your journey.
           </p>
         </div>
       </motion.div>
