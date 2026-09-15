@@ -1,0 +1,997 @@
+{
+  "info": {
+    "name": "Traveloop API Collection",
+    "description": "Complete API collection for Traveloop - Premium Travel Planning SaaS Application",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_postman_id": "traveloop-api-collection-v1"
+  },
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Sign Up",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"{{test_user_name}}\",\n  \"email\": \"{{test_user_email}}\",\n  \"password\": \"{{test_user_password}}\",\n  \"avatar\": \"\",\n  \"preferences\": {\n    \"theme\": \"dark\",\n    \"language\": \"en\",\n    \"currency\": \"USD\",\n    \"notifications\": true\n  }\n}"
+            },
+            "url": {
+              "raw": "{{api_url}}/auth/signup",
+              "host": ["{{api_url}}"],
+              "path": ["auth", "signup"]
+            },
+            "description": "Register a new user account"
+          },
+          "response": []
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{test_user_email}}\",\n  \"password\": \"{{test_user_password}}\"\n}"
+            },
+            "url": {
+              "raw": "{{api_url}}/auth/login",
+              "host": ["{{api_url}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Authenticate user and receive JWT token"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var jsonData = pm.response.json();",
+                  "    if (jsonData.success && jsonData.data) {",
+                  "        pm.environment.set(\"auth_token\", pm.cookies.get(\"auth-token\") || \"\");",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Current User (Me)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{api_url}}/auth/me",
+              "host": ["{{api_url}}"],
+              "path": ["auth", "me"]
+            },
+            "description": "Get current authenticated user profile"
+          },
+          "response": []
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{api_url}}/auth/logout",
+              "host": ["{{api_url}}"],
+              "path": ["auth", "logout"]
+            },
+            "description": "Logout current user"
+          },
+          "response": []
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{api_url}}/auth/refresh",
+              "host": ["{{api_url}}"],
+              "path": ["auth", "refresh"]
+            },
+            "description": "Refresh JWT token"
+          },
+          "response": []
+        },
+        {
+          "name": "Forgot Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{test_user_email}}\"\n}"
+            },
+            "url": {
+              "raw": "{{api_url}}/auth/forgot-password",
+              "host": ["{{api_url}}"],
+              "path": ["auth", "forgot-password"]
+            },
+            "description": "Request password reset email"
+          },
+          "response": []
+        },
+        {
+          "name": "Reset Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"reset_token_here\",\n  \"newPassword\": \"NewPassword123\"\n}"
+            },
+            "url": {
+              "raw": "{{api_url}}/auth/reset-password",
+              "host": ["{{api_url}}"],
+              "path": ["auth", "reset-password"]
+            },
+            "description": "Reset password with token"
+          },
+          "response": []
+        },
+        {
+          "name": "Verify OTP",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{test_user_email}}\",\n  \"otp\": \"123456\"\n}"
+            },
+            "url": {
+              "raw": "{{api_url}}/auth/verify-otp",
+              "host": ["{{api_url}}"],
+              "path": ["auth", "verify-otp"]
+            },
+            "description": "Verify OTP for authentication"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "Get User by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{api_url}}/users?userId=user_id_here",
+              "host": ["{{api_url}}"],
+              "path": ["users"],
+              "query": [
+                {
+                  "key": "userId",
+                  "value": "user_id_here"
+                }
+              ]
+            },
+            "description": "Get user profile by ID"
+          },
+          "response": []
+        },
+        {
+          "name": "Update User Profile",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Name\",\n  \"avatar\": \"https://example.com/avatar.jpg\",\n  \"preferences\": {\n    \"theme\": \"light\",\n    \"language\": \"en\",\n    \"currency\": \"EUR\",\n    \"notifications\": false\n  }\n}"
+            },
+            "url": {
+              "raw": "{{api_url}}/users?userId=user_id_here",
+              "host": ["{{api_url}}"],
+              "path": ["users"],
+              "query": [
+                {
+                  "key": "userId",
+                  "value": "user_id_here"
+                }
+              ]
+            },
+            "description": "Update user profile"
+          },
+          "response": []
+        },
+        {
+          "name": "Search Users",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{api_url}}/users/search?q=search_term",
+              "host": ["{{api_url}}"],
+              "path": ["users", "search"],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "search_term"
+                }
+              ]
+            },
+            "description": "Search for users"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Trips",
+      "item": [
+        {
+          "name": "Get All Trips",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{api_url}}/trips?status=upcoming&destination=Paris&minBudget=1000&maxBudget=10000&search=vacation",
+              "host": ["{{api_url}}"],
+              "path": ["trips"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "upcoming",
+                  "description": "Filter by trip status"
+                },
+                {
+                  "key": "destination",
+                  "value": "Paris",
+                  "description": "Filter by destination"
+                },
+                {
+                  "key": "minBudget",
+                  "value": "1000",
+                  "description": "Minimum budget"
+                },
+                {
+                  "key": "maxBudget",
+                  "value": "10000",
+                  "description": "Maximum budget"
+                },
+                {
+                  "key": "search",
+                  "value": "vacation",
+                  "description": "Search in title, destination, description"
+                }
+              ]
+            },
+            "description": "Get all trips with optional filters"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Trip",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Summer Vacation 2026\",\n  \"destination\": \"Paris, France\",\n  \"startDate\": \"2026-06-15\",\n  \"endDate\": \"2026-06-20\",\n  \"travelers\": 2,\n  \"budget\": 5000,\n  \"status\": \"planning\",\n  \"description\": \"Amazing summer trip to Paris\",\n  \"imageUrl\": \"https://example.com/paris.jpg\"\n}"
+            },
+            "url": {
+              "raw": "{{api_url}}/trips",
+              "host": ["{{api_url}}"],
+              "path": ["trips"]
+            },
+            "description": "Create a new trip"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Trip by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{api_url}}/trips/{{sample_trip_id}}",
+              "host": ["{{api_url}}"],
+              "path": ["trips", "{{sample_trip_id}}"]
+            },
+            "description": "Get specific trip details"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Trip",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Updated Trip Title\",\n  \"destination\": \"Updated Destination\",\n  \"startDate\": \"2026-07-01\",\n  \"endDate\": \"2026-07-10\",\n  \"travelers\": 3,\n  \"budget\": 6000,\n  \"status\": \"upcoming\",\n  \"description\": \"Updated description\",\n  \"imageUrl\": \"https://example.com/updated.jpg\"\n}"
+            },
+            "url": {
+              "raw": "{{api_url}}/trips/{{sample_trip_id}}",
+              "host": ["{{api_url}}"],
+              "path": ["trips", "{{sample_trip_id}}"]
+            },
+            "description": "Update trip details"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Trip",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{api_url}}/trips/{{sample_trip_id}}",
+              "host": ["{{api_url}}"],
+              "path": ["trips", "{{sample_trip_id}}"]
+            },
+            "description": "Delete a trip and all related data"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Trip by Join Code",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{api_url}}/trips/by-code/123456",
+              "host": ["{{api_url}}"],
+              "path": ["trips", "by-code", "123456"]
+            },
+            "description": "Get trip by 6-digit join code"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Trip Activities",
+      "item": [
+        {
+          "name": "Get Trip Activities",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{api_url}}/trips/{{sample_trip_id}}/activities",
+              "host": ["{{api_url}}"],
+              "path": ["trips", "{{sample_trip_id}}", "activities"]
+            },
+            "description": "Get all activities for a trip"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Activity",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Visit Eiffel Tower\",\n  \"location\": \"Paris, France\",\n  \"date\": \"2026-06-16\",\n  \"time\": \"10:00\",\n  \"category\": \"Sightseeing\",\n  \"cost\": 25,\n  \"duration\": 2,\n  \"description\": \"Visit the iconic Eiffel Tower\",\n  \"notes\": \"Book tickets in advance\"\n}"
+            },
+            "url": {
+              "raw": "{{api_url}}/trips/{{sample_trip_id}}/activities",
+              "host": ["{{api_url}}"],
+              "path": ["trips", "{{sample_trip_id}}", "activities"]
+            },
+            "description": "Create a new activity for a trip"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Activity Feed",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{api_url}}/trips/{{sample_trip_id}}/activities-feed",
+              "host": ["{{api_url}}"],
+              "path": ["trips", "{{sample_trip_id}}", "activities-feed"]
+            },
+            "description": "Get activity feed for a trip"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Activity",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Updated Activity Title\",\n  \"location\": \"Updated Location\",\n  \"date\": \"2026-06-17\",\n  \"time\": \"14:00\",\n  \"category\": \"Food\",\n  \"cost\": 50,\n  \"duration\": 3,\n  \"description\": \"Updated description\",\n  \"notes\": \"Updated notes\"\n}"
+            },
+            "url": {
+              "raw": "{{api_url}}/trips/{{sample_trip_id}}/activities/activity_id_here",
+              "host": ["{{api_url}}"],
+              "path": ["trips", "{{sample_trip_id}}", "activities", "activity_id_here"]
+            },
+            "description": "Update a specific activity"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Activity",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{api_url}}/trips/{{sample_trip_id}}/activities/activity_id_here",
+              "host": ["{{api_url}}"],
+              "path": ["trips", "{{sample_trip_id}}", "activities", "activity_id_here"]
+            },
+            "description": "Delete a specific activity"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Trip Budget",
+      "item": [
+        {
+          "name": "Get Trip Budget",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{api_url}}/trips/{{sample_trip_id}}/budget",
+              "host": ["{{api_url}}"],
+              "path": ["trips", "{{sample_trip_id}}", "budget"]
+            },
+            "description": "Get budget items and summary for a trip"
+          },
+          "response": []
+        },
+        {
+          "name": "Add Budget Item",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"category\": \"Flights\",\n  \"name\": \"Flight to Paris\",\n  \"amount\": 450,\n  \"date\": \"2026-06-15\",\n  \"notes\": \"Economy class\"\n}"
+            },
+            "url": {
+              "raw": "{{api_url}}/trips/{{sample_trip_id}}/budget",
+              "host": ["{{api_url}}"],
+              "path": ["trips", "{{sample_trip_id}}", "budget"]
+            },
+            "description": "Add a new budget item"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Budget Item",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"category\": \"Updated Category\",\n  \"name\": \"Updated Item Name\",\n  \"amount\": 500,\n  \"date\": \"2026-06-16\",\n  \"notes\": \"Updated notes\"\n}"
+            },
+            "url": {
+              "raw": "{{api_url}}/trips/{{sample_trip_id}}/budget/item_id_here",
+              "host": ["{{api_url}}"],
+              "path": ["trips", "{{sample_trip_id}}", "budget", "item_id_here"]
+            },
+            "description": "Update a specific budget item"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Budget Item",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{api_url}}/trips/{{sample_trip_id}}/budget/item_id_here",
+              "host": ["{{api_url}}"],
+              "path": ["trips", "{{sample_trip_id}}", "budget", "item_id_here"]
+            },
+            "description": "Delete a specific budget item"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Trip Map",
+      "item": [
+        {
+          "name": "Get Map Points",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{api_url}}/trips/{{sample_trip_id}}/map",
+              "host": ["{{api_url}}"],
+              "path": ["trips", "{{sample_trip_id}}", "map"]
+            },
+            "description": "Get all map points for a trip"
+          },
+          "response": []
+        },
+        {
+          "name": "Add Map Point",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Eiffel Tower\",\n  \"description\": \"Iconic landmark\",\n  \"lat\": 48.8584,\n  \"lng\": 2.2945,\n  \"type\": \"landmark\",\n  \"day\": 1,\n  \"order\": 1,\n  \"activityId\": \"activity_id_here\"\n}"
+            },
+            "url": {
+              "raw": "{{api_url}}/trips/{{sample_trip_id}}/map",
+              "host": ["{{api_url}}"],
+              "path": ["trips", "{{sample_trip_id}}", "map"]
+            },
+            "description": "Add a new map point"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Map Point",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Point Name\",\n  \"description\": \"Updated description\",\n  \"lat\": 48.8600,\n  \"lng\": 2.3000,\n  \"type\": \"custom\",\n  \"day\": 2,\n  \"order\": 2,\n  \"activityId\": \"updated_activity_id\"\n}"
+            },
+            "url": {
+              "raw": "{{api_url}}/trips/{{sample_trip_id}}/map/point_id_here",
+              "host": ["{{api_url}}"],
+              "path": ["trips", "{{sample_trip_id}}", "map", "point_id_here"]
+            },
+            "description": "Update a specific map point"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Map Point",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{api_url}}/trips/{{sample_trip_id}}/map/point_id_here",
+              "host": ["{{api_url}}"],
+              "path": ["trips", "{{sample_trip_id}}", "map", "point_id_here"]
+            },
+            "description": "Delete a specific map point"
+          },
+          "response": []
+        },
+        {
+          "name": "Sync Map Points",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"points\": [\n    {\n      \"id\": \"point_id_1\",\n      \"name\": \"Point 1\",\n      \"lat\": 48.8584,\n      \"lng\": 2.2945,\n      \"order\": 1\n    },\n    {\n      \"id\": \"point_id_2\",\n      \"name\": \"Point 2\",\n      \"lat\": 48.8600,\n      \"lng\": 2.3000,\n      \"order\": 2\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{api_url}}/trips/{{sample_trip_id}}/map/sync",
+              "host": ["{{api_url}}"],
+              "path": ["trips", "{{sample_trip_id}}", "map", "sync"]
+            },
+            "description": "Sync multiple map points at once"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Trip Members",
+      "item": [
+        {
+          "name": "Get Trip Members",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{api_url}}/trips/{{sample_trip_id}}/members",
+              "host": ["{{api_url}}"],
+              "path": ["trips", "{{sample_trip_id}}", "members"]
+            },
+            "description": "Get all members of a trip"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Trip Invitations",
+      "item": [
+        {
+          "name": "Get Trip Invitations",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{api_url}}/trips/{{sample_trip_id}}/invitations",
+              "host": ["{{api_url}}"],
+              "path": ["trips", "{{sample_trip_id}}", "invitations"]
+            },
+            "description": "Get all invitations for a trip"
+          },
+          "response": []
+        },
+        {
+          "name": "Join Trip by Code",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"123456\"\n}"
+            },
+            "url": {
+              "raw": "{{api_url}}/trips/{{sample_trip_id}}/join",
+              "host": ["{{api_url}}"],
+              "path": ["trips", "{{sample_trip_id}}", "join"]
+            },
+            "description": "Join a trip using join code"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Trip Notes",
+      "item": [
+        {
+          "name": "Get Trip Notes",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{api_url}}/trips/{{sample_trip_id}}/notes",
+              "host": ["{{api_url}}"],
+              "path": ["trips", "{{sample_trip_id}}", "notes"]
+            },
+            "description": "Get all notes for a trip"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Note",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Important Note\",\n  \"content\": \"Remember to bring passport\",\n  \"category\": \"general\"\n}"
+            },
+            "url": {
+              "raw": "{{api_url}}/trips/{{sample_trip_id}}/notes",
+              "host": ["{{api_url}}"],
+              "path": ["trips", "{{sample_trip_id}}", "notes"]
+            },
+            "description": "Create a new note for a trip"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Note",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Updated Note Title\",\n  \"content\": \"Updated note content\",\n  \"category\": \"important\"\n}"
+            },
+            "url": {
+              "raw": "{{api_url}}/trips/{{sample_trip_id}}/notes/note_id_here",
+              "host": ["{{api_url}}"],
+              "path": ["trips", "{{sample_trip_id}}", "notes", "note_id_here"]
+            },
+            "description": "Update a specific note"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Note",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{api_url}}/trips/{{sample_trip_id}}/notes/note_id_here",
+              "host": ["{{api_url}}"],
+              "path": ["trips", "{{sample_trip_id}}", "notes", "note_id_here"]
+            },
+            "description": "Delete a specific note"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Trip Packing List",
+      "item": [
+        {
+          "name": "Get Packing List",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{api_url}}/trips/{{sample_trip_id}}/packing",
+              "host": ["{{api_url}}"],
+              "path": ["trips", "{{sample_trip_id}}", "packing"]
+            },
+            "description": "Get all packing items for a trip"
+          },
+          "response": []
+        },
+        {
+          "name": "Add Packing Item",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Passport\",\n  \"category\": \"Documents\",\n  \"quantity\": 1,\n  \"packed\": false,\n  \"notes\": \"Check expiration date\"\n}"
+            },
+            "url": {
+              "raw": "{{api_url}}/trips/{{sample_trip_id}}/packing",
+              "host": ["{{api_url}}"],
+              "path": ["trips", "{{sample_trip_id}}", "packing"]
+            },
+            "description": "Add a new packing item"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Packing Item",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Item Name\",\n  \"category\": \"Clothing\",\n  \"quantity\": 2,\n  \"packed\": true,\n  \"notes\": \"Updated notes\"\n}"
+            },
+            "url": {
+              "raw": "{{api_url}}/trips/{{sample_trip_id}}/packing/item_id_here",
+              "host": ["{{api_url}}"],
+              "path": ["trips", "{{sample_trip_id}}", "packing", "item_id_here"]
+            },
+            "description": "Update a specific packing item"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Packing Item",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{api_url}}/trips/{{sample_trip_id}}/packing/item_id_here",
+              "host": ["{{api_url}}"],
+              "path": ["trips", "{{sample_trip_id}}", "packing", "item_id_here"]
+            },
+            "description": "Delete a specific packing item"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Invitations",
+      "item": [
+        {
+          "name": "Create Invitation",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"invitee@example.com\",\n  \"tripId\": \"{{sample_trip_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{api_url}}/invitations",
+              "host": ["{{api_url}}"],
+              "path": ["invitations"]
+            },
+            "description": "Create a new trip invitation"
+          },
+          "response": []
+        },
+        {
+          "name": "Accept Invitation",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{api_url}}/invitations/invitation_token_here",
+              "host": ["{{api_url}}"],
+              "path": ["invitations", "invitation_token_here"]
+            },
+            "description": "Accept an invitation by token"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Cities",
+      "item": [
+        {
+          "name": "Get Cities",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{api_url}}/cities?q=Paris&region=Europe",
+              "host": ["{{api_url}}"],
+              "path": ["cities"],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "Paris",
+                  "description": "Search query for city name, country, or region"
+                },
+                {
+                  "key": "region",
+                  "value": "Europe",
+                  "description": "Filter by region"
+                }
+              ]
+            },
+            "description": "Get cities with optional search and region filters"
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "api_url",
+      "value": "http://localhost:3000/api",
+      "type": "string"
+    }
+  ]
+}
