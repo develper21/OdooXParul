@@ -158,9 +158,9 @@ export default function InviteLandingPage({ params }: { params: Promise<{ tripId
           <div className="w-16 h-16 rounded-2xl bg-green-600/20 flex items-center justify-center mx-auto mb-4">
             <Check className="w-8 h-8 text-green-400" />
           </div>
-          <h1 className="text-2xl font-bold text-white mb-2">You're In!</h1>
+          <h1 className="text-2xl font-bold text-white mb-2">You&apos;re In!</h1>
           <p className="text-white/60 mb-2">
-            Successfully joined "{tripInfo.title}"
+            Successfully joined &quot;{tripInfo.title}&quot;
           </p>
           <p className="text-white/40 text-sm">Redirecting to trip page...</p>
         </motion.div>
@@ -200,7 +200,7 @@ export default function InviteLandingPage({ params }: { params: Promise<{ tripId
             <Mail className="w-8 h-8 text-white" />
           </div>
           <h1 className="text-3xl font-bold text-white mb-2" style={{ fontFamily: "var(--font-playfair)" }}>
-            You're Invited!
+            You&apos;re Invited!
           </h1>
           <p className="text-white/60">Join this amazing trip adventure</p>
         </div>
@@ -276,7 +276,7 @@ export default function InviteLandingPage({ params }: { params: Promise<{ tripId
           {/* Help Text */}
           <div className="text-center py-4 border-t border-white/10">
             <p className="text-white/40 text-xs">
-              By accepting, you'll become a member of this trip and can help plan the adventure
+              By accepting, you&apos;ll become a member of this trip and can help plan the adventure
             </p>
           </div>
         </div>
