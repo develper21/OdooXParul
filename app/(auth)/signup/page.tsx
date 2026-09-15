@@ -202,7 +202,7 @@ export default function SignupPage() {
             </motion.div>
           </div>
 
-          <p className="text-white/30 text-sm italic font-serif">"Not all those who wander are lost." — J.R.R. Tolkien</p>
+          <p className="text-white/30 text-sm italic font-serif">&quot;Not all those who wander are lost.&quot; — J.R.R. Tolkien</p>
         </div>
       </div>
     </div>
