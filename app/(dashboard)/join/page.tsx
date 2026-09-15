@@ -108,7 +108,7 @@ export default function JoinPage() {
           <h1 className="text-3xl font-bold text-white mb-2" style={{ fontFamily: "var(--font-playfair)" }}>
             Join Trip
           </h1>
-          <p className="text-white/60">Enter the 6-digit code to join your friend's trip</p>
+          <p className="text-white/60">Enter the 6-digit code to join your friend&apos;s trip</p>
         </div>
 
         <div className="glass-card p-6 space-y-6">
