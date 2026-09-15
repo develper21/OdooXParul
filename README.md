@@ -40,7 +40,8 @@ Every screen is crafted with a premium design language inspired by:
 
 ---
 
-# ✨ Core Experience
+## ✨ Core Experience
+
 ## 🧠 AI-Powered Travel Planning
 
 Traveloop helps users:
@@ -66,7 +67,7 @@ The platform combines:
 
 ---
 
-# 🎨 Design Philosophy
+## 🎨 Design Philosophy
 
 Most hackathon projects look:
 
@@ -93,7 +94,7 @@ The UI is heavily inspired by:
 
 ---
 
-# 🚀 Major Features
+## 🚀 Major Features
 
 ## 🌍 Premium Landing Experience
 
@@ -192,7 +193,7 @@ Includes:
 
 ---
 
-# 🧠 UI Highlights
+## 🧠 UI Highlights
 
 ## ✨ Premium Visual System
 
@@ -225,7 +226,7 @@ Every interaction is designed to feel:
 
 ---
 
-# 🛠️ Tech Stack
+## 🛠️ Tech Stack
 
 ## Frontend
 
@@ -258,7 +259,7 @@ Every interaction is designed to feel:
 
 ---
 
-# ⚡ Quick Start
+## ⚡ Quick Start
 
 ## Clone Project
 
@@ -280,7 +281,7 @@ npm run dev
 
 ---
 
-# 🔐 Environment Variables
+## 🔐 Environment Variables
 
 ```env
 DATABASE_URL=
@@ -290,7 +291,7 @@ CLERK_SECRET_KEY=
 
 ---
 
-# 🌟 Why Traveloop Stands Out
+## 🌟 Why Traveloop Stands Out
 
 Unlike normal hackathon projects:
 
@@ -305,7 +306,7 @@ Unlike normal hackathon projects:
 
 ---
 
-# 📱 Responsive Experience
+## 📱 Responsive Experience
 
 Fully optimized for:
 
@@ -322,7 +323,7 @@ Designed with:
 
 ---
 
-# 🔮 Future Vision
+## 🔮 Future Vision
 
 Planned features:
 
@@ -337,7 +338,7 @@ Planned features:
 
 ---
 
-# 🏆 Final Vision
+## 🏆 Final Vision
 
 Traveloop was built with one goal:
 
@@ -356,8 +357,8 @@ It is:
 
 <div align="center">
 
-# ✈️ Traveloop
+## ✈️ Traveloop
 
-### Premium Travel Reimagined.
+### Premium Travel Reimagined
 
 </div>
