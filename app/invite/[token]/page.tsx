@@ -50,7 +50,7 @@ export default function InvitePage({ params }: { params: Promise<{ token: string
           return;
         }
 
-        const response = await apiPost(`/api/invitations/${token}`, {
+        const response = await apiPost<{ success: boolean; data?: any }>(`/api/invitations/${token}`, {
           action: "accept",
           userId,
         });
@@ -135,7 +135,7 @@ export default function InvitePage({ params }: { params: Promise<{ token: string
                 <Mail className="w-8 h-8 text-white" />
               </div>
               <h1 className="text-2xl font-bold text-white mb-2">
-                You're Invited! 🎉
+                You&apos;re Invited! 🎉
               </h1>
               <p className="text-white/60">
                 Join this amazing trip and start planning together
