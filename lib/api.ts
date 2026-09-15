@@ -1,4 +1,4 @@
-export async function apiRequest<T>(path: string, options: RequestInit = {}) {
+export async function apiRequest<T = any>(path: string, options: RequestInit = {}) {
   const headers = new Headers(options.headers);
   if (!headers.has("Content-Type")) {
     headers.set("Content-Type", "application/json");
@@ -18,18 +18,18 @@ export async function apiRequest<T>(path: string, options: RequestInit = {}) {
   return data as T;
 }
 
-export async function apiGet<T>(path: string) {
+export async function apiGet<T = any>(path: string) {
   return apiRequest<T>(path, { method: "GET" });
 }
 
-export async function apiPost<T>(path: string, body: unknown) {
+export async function apiPost<T = any>(path: string, body: unknown) {
   return apiRequest<T>(path, { method: "POST", body: JSON.stringify(body) });
 }
 
-export async function apiPatch<T>(path: string, body: unknown) {
+export async function apiPatch<T = any>(path: string, body: unknown) {
   return apiRequest<T>(path, { method: "PATCH", body: JSON.stringify(body) });
 }
 
-export async function apiDelete<T>(path: string) {
+export async function apiDelete<T = any>(path: string) {
   return apiRequest<T>(path, { method: "DELETE" });
 }
