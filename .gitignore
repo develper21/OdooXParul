@@ -33,6 +33,7 @@ lerna-debug.log*
 .idea
 .project
 .classpath
+.freebuff
 .c9/
 *.launch
 .settings/
